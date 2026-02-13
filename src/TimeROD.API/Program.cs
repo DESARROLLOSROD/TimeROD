@@ -14,6 +14,17 @@ if (builder.Environment.IsProduction())
     {
         connectionString = databaseUrl;
     }
+    else
+    {
+        Console.WriteLine("WARNING: DATABASE_URL environment variable not found in production!");
+    }
+}
+
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException(
+        "Database connection string is not configured. " +
+        "Set DATABASE_URL environment variable or configure DefaultConnection in appsettings.json");
 }
 
 builder.Services.AddDbContext<TimeRODDbContext>(options =>
