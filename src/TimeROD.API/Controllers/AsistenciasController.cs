@@ -24,8 +24,8 @@ public class AsistenciasController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Asistencia>>> GetAsistencias(
         [FromQuery] int? empleadoId = null,
-        [FromQuery] DateOnly? fechaInicio = null,
-        [FromQuery] DateOnly? fechaFin = null)
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null)
     {
         try
         {
@@ -98,8 +98,8 @@ public class AsistenciasController : ControllerBase
     [HttpGet("empleado/{empleadoId}")]
     public async Task<ActionResult<IEnumerable<Asistencia>>> GetAsistenciasByEmpleado(
         int empleadoId,
-        [FromQuery] DateOnly? fechaInicio = null,
-        [FromQuery] DateOnly? fechaFin = null)
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null)
     {
         try
         {
@@ -145,7 +145,7 @@ public class AsistenciasController : ControllerBase
                 return BadRequest(new { error = "Empleado no encontrado o inactivo" });
             }
 
-            var fechaHoy = DateOnly.FromDateTime(DateTime.Now);
+            var fechaHoy = DateTime.Now.Date;
 
             // Verificar si ya tiene una entrada hoy
             var asistenciaExistente = await _context.Asistencias
@@ -206,7 +206,7 @@ public class AsistenciasController : ControllerBase
     {
         try
         {
-            var fechaHoy = DateOnly.FromDateTime(DateTime.Now);
+            var fechaHoy = DateTime.Now.Date;
 
             // Buscar el registro de asistencia del día
             var asistencia = await _context.Asistencias
@@ -257,15 +257,15 @@ public class AsistenciasController : ControllerBase
     /// </summary>
     [HttpGet("reporte")]
     public async Task<ActionResult> GetReporteAsistencias(
-        [FromQuery] DateOnly? fechaInicio = null,
-        [FromQuery] DateOnly? fechaFin = null,
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null,
         [FromQuery] int? empresaId = null)
     {
         try
         {
             // Por defecto, últimos 30 días
-            fechaInicio ??= DateOnly.FromDateTime(DateTime.Now.AddDays(-30));
-            fechaFin ??= DateOnly.FromDateTime(DateTime.Now);
+            fechaInicio ??= DateTime.Now.AddDays(-30).Date;
+            fechaFin ??= DateTime.Now.Date;
 
             var query = _context.Asistencias
                 .Include(a => a.Empleado)

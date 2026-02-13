@@ -13,9 +13,9 @@ public class Asistencia : BaseEntity
     public int EmpleadoId { get; set; }
 
     /// <summary>
-    /// Fecha del registro (sin hora)
+    /// Fecha del registro (se guarda con hora 00:00:00 para compatibilidad)
     /// </summary>
-    public DateOnly Fecha { get; set; }
+    public DateTime Fecha { get; set; }
 
     /// <summary>
     /// Hora de entrada registrada
