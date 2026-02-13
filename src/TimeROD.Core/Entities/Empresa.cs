@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace TimeROD.Core.Entities;
 
 /// <summary>
@@ -33,6 +35,9 @@ public class Empresa : BaseEntity
     public bool Activa { get; set; } = true;
 
     // Navegación: una empresa tiene muchas áreas, proyectos, usuarios, etc.
-    public ICollection<Area> Areas { get; set; } = new List<Area>();
-    public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ICollection<Area>? Areas { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ICollection<Usuario>? Usuarios { get; set; }
 }

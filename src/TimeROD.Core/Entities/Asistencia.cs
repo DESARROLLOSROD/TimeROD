@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace TimeROD.Core.Entities;
 
 /// <summary>
@@ -56,7 +58,8 @@ public class Asistencia : BaseEntity
     public int? MinutosRetraso { get; set; }
 
     // Navegación
-    public Empleado Empleado { get; set; } = null!;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Empleado? Empleado { get; set; }
 }
 
 /// <summary>

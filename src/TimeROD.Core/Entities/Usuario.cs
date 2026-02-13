@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace TimeROD.Core.Entities;
 
 /// <summary>
@@ -41,7 +43,8 @@ public class Usuario : BaseEntity
     public DateTime? UltimoAcceso { get; set; }
 
     // Navegación
-    public Empresa Empresa { get; set; } = null!;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Empresa? Empresa { get; set; }
 }
 
 /// <summary>
