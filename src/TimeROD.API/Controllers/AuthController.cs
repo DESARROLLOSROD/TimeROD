@@ -59,12 +59,34 @@ public class AuthController : ControllerBase
             }
 
             // Verificar password con BCrypt
-            bool passwordValido = BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash);
+            bool passwordValido = false;
+            bool needsRehash = false;
+
+            try
+            {
+                passwordValido = BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash);
+            }
+            catch (Exception)
+            {
+                // Si falla (por ejemplo, formato inválido/salt version), intentamos comparar como texto plano (Legacy)
+                if (usuario.PasswordHash == request.Password)
+                {
+                    passwordValido = true;
+                    needsRehash = true;
+                }
+            }
 
             if (!passwordValido)
             {
                 _logger.LogWarning("Intento de login con password incorrecto: {Email}", request.Email);
                 return Unauthorized(new { error = "Email o password incorrectos" });
+            }
+
+            // Si es password legacy (texto plano), lo actualizamos a hash
+            if (needsRehash)
+            {
+                usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                _logger.LogInformation("Password actualizado a hash para usuario: {Email}", request.Email);
             }
 
             // Actualizar último acceso
