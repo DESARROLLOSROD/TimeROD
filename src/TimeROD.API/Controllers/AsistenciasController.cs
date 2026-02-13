@@ -145,7 +145,7 @@ public class AsistenciasController : ControllerBase
                 return BadRequest(new { error = "Empleado no encontrado o inactivo" });
             }
 
-            var fechaHoy = DateTime.Now.Date;
+            var fechaHoy = DateTime.UtcNow.Date;
 
             // Verificar si ya tiene una entrada hoy
             var asistenciaExistente = await _context.Asistencias
@@ -163,7 +163,7 @@ public class AsistenciasController : ControllerBase
             // Si existe un registro pero sin hora de entrada, actualizarlo
             if (asistenciaExistente != null)
             {
-                asistenciaExistente.HoraEntrada = DateTime.Now;
+                asistenciaExistente.HoraEntrada = DateTime.UtcNow;
                 asistenciaExistente.Notas = dto.Notas;
                 await _context.SaveChangesAsync();
 
@@ -175,7 +175,7 @@ public class AsistenciasController : ControllerBase
             {
                 EmpleadoId = dto.EmpleadoId,
                 Fecha = fechaHoy,
-                HoraEntrada = DateTime.Now,
+                HoraEntrada = DateTime.UtcNow,
                 Tipo = TipoAsistencia.Normal,
                 Notas = dto.Notas,
                 Aprobado = true
@@ -206,7 +206,7 @@ public class AsistenciasController : ControllerBase
     {
         try
         {
-            var fechaHoy = DateTime.Now.Date;
+            var fechaHoy = DateTime.UtcNow.Date;
 
             // Buscar el registro de asistencia del día
             var asistencia = await _context.Asistencias
@@ -232,7 +232,7 @@ public class AsistenciasController : ControllerBase
             }
 
             // Registrar hora de salida
-            asistencia.HoraSalida = DateTime.Now;
+            asistencia.HoraSalida = DateTime.UtcNow;
             asistencia.Notas = string.IsNullOrEmpty(dto.Notas)
                 ? asistencia.Notas
                 : $"{asistencia.Notas} | {dto.Notas}";
@@ -264,8 +264,8 @@ public class AsistenciasController : ControllerBase
         try
         {
             // Por defecto, últimos 30 días
-            fechaInicio ??= DateTime.Now.AddDays(-30).Date;
-            fechaFin ??= DateTime.Now.Date;
+            fechaInicio ??= DateTime.UtcNow.AddDays(-30).Date;
+            fechaFin ??= DateTime.UtcNow.Date;
 
             var query = _context.Asistencias
                 .Include(a => a.Empleado)
