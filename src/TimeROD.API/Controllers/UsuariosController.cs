@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TimeROD.Core.Entities;
@@ -7,6 +8,7 @@ namespace TimeROD.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class UsuariosController : ControllerBase
 {
     private readonly TimeRODDbContext _context;
@@ -92,10 +94,6 @@ public class UsuariosController : ControllerBase
     /// <summary>
     /// Crea un nuevo usuario
     /// </summary>
-    /// <remarks>
-    /// NOTA: En producción, el password debe ser hasheado.
-    /// Por ahora se guarda directamente (cambiar en Fase 2 con JWT)
-    /// </remarks>
     [HttpPost]
     public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
     {
@@ -110,14 +108,14 @@ public class UsuariosController : ControllerBase
                 return BadRequest(new { error = $"El email {usuario.Email} ya está registrado" });
             }
 
-            // TODO: Hashear password cuando se implemente JWT
-            // Por ahora solo advertencia en logs
+            // Validar y hashear password
             if (string.IsNullOrEmpty(usuario.PasswordHash))
             {
                 return BadRequest(new { error = "Password es requerido" });
             }
 
-            _logger.LogWarning("Usuario creado con password sin hashear. Implementar hashing en Fase 2");
+            // Hashear password con BCrypt
+            usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(usuario.PasswordHash);
 
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
@@ -171,8 +169,8 @@ public class UsuariosController : ControllerBase
             if (!string.IsNullOrEmpty(usuario.PasswordHash) &&
                 usuario.PasswordHash != usuarioExistente.PasswordHash)
             {
-                usuarioExistente.PasswordHash = usuario.PasswordHash;
-                _logger.LogWarning("Password actualizado sin hashear. Implementar hashing en Fase 2");
+                // Hashear el nuevo password con BCrypt
+                usuarioExistente.PasswordHash = BCrypt.Net.BCrypt.HashPassword(usuario.PasswordHash);
             }
 
             await _context.SaveChangesAsync();

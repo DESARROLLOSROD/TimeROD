@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TimeROD.Core.Entities;
@@ -7,6 +8,7 @@ namespace TimeROD.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AsistenciasController : ControllerBase
 {
     private readonly TimeRODDbContext _context;

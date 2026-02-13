@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using TimeROD.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -67,6 +70,52 @@ Console.WriteLine("Connection string configured successfully");
 builder.Services.AddDbContext<TimeRODDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+// Configurar JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"];
+
+// En producción, leer JWT_SECRET_KEY de variable de entorno
+if (builder.Environment.IsProduction())
+{
+    var jwtSecretEnv = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+    if (!string.IsNullOrEmpty(jwtSecretEnv))
+    {
+        jwtKey = jwtSecretEnv;
+        Console.WriteLine("Using JWT_SECRET_KEY from environment variable");
+    }
+}
+
+if (string.IsNullOrEmpty(jwtKey))
+{
+    throw new InvalidOperationException(
+        "JWT Key is not configured. Set JWT_SECRET_KEY environment variable or configure Jwt:Key in appsettings.json");
+}
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+Console.WriteLine($"JWT Issuer: {jwtIssuer}");
+Console.WriteLine($"JWT Audience: {jwtAudience}");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
 // Add services to the container
 builder.Services.AddControllers();
 //builder.Services.AddEndpointsApiExplorer();
@@ -104,6 +153,7 @@ if (app.Environment.IsProduction())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
