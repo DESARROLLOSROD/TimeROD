@@ -9,7 +9,22 @@
       "Bash(dotnet add reference:*)",
       "Bash(dotnet add package:*)",
       "Bash(dotnet ef migrations add:*)",
-      "Bash(dotnet tool install:*)"
+      "Bash(dotnet tool install:*)",
+      "Bash(dotnet ef database update:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker run:*)",
+      "Bash(dotnet run:*)",
+      "Bash(timeout 5 tail:*)",
+      "Bash(docker stop:*)",
+      "Bash(timeout 5 bash:*)",
+      "Bash(docker restart:*)",
+      "Bash(tee:*)",
+      "Bash(dotnet ef migrations script:*)",
+      "Bash(dotnet remove:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(dotnet build:*)",
+      "Bash(curl:*)"
     ]
   }
 }

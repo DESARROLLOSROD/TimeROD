@@ -25,9 +25,6 @@ C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeRO
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\bin\Debug\net9.0\Mono.TextTemplating.dll
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\bin\Debug\net9.0\Npgsql.dll
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\bin\Debug\net9.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
-C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
-C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
-C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\bin\Debug\net9.0\System.CodeDom.dll
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\bin\Debug\net9.0\System.Composition.AttributedModel.dll
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\bin\Debug\net9.0\System.Composition.Convention.dll
@@ -111,6 +108,7 @@ C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeRO
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\obj\Debug\net9.0\TimeROD.API.csproj.CoreCompileInputs.cache
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\obj\Debug\net9.0\TimeROD.API.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\obj\Debug\net9.0\TimeROD.API.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\obj\Debug\net9.0\TimeROD.API.sourcelink.json
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\obj\Debug\net9.0\rjimswa.dswa.cache.json
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.API\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json

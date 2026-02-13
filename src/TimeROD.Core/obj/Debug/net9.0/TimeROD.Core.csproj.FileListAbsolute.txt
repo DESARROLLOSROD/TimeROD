@@ -5,6 +5,7 @@ C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeRO
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.Core\obj\Debug\net9.0\TimeROD.Core.AssemblyInfoInputs.cache
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.Core\obj\Debug\net9.0\TimeROD.Core.AssemblyInfo.cs
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.Core\obj\Debug\net9.0\TimeROD.Core.csproj.CoreCompileInputs.cache
+C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.Core\obj\Debug\net9.0\TimeROD.Core.sourcelink.json
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.Core\obj\Debug\net9.0\TimeROD.Core.dll
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.Core\obj\Debug\net9.0\refint\TimeROD.Core.dll
 C:\Users\ADMIN_SISTEMAS\OneDrive - Desarrollos ROD\Documentos\Desarrollos\TimeROD\src\TimeROD.Core\obj\Debug\net9.0\TimeROD.Core.pdb

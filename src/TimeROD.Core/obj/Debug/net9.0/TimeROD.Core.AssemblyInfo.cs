@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TimeROD.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e6853e1849bbe5cf02bc33ce39f88e5642cb6bd2")]
 [assembly: System.Reflection.AssemblyProductAttribute("TimeROD.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TimeROD.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
