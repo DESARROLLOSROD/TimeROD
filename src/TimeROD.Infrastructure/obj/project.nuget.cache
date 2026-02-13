@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "jXVYVhAKTGI=",
+  "dgSpecHash": "lLYD1ElkErY=",
   "success": true,
-  "projectFilePath": "c:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Infrastructure\\TimeROD.Infrastructure.csproj",
+  "projectFilePath": "C:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Infrastructure\\TimeROD.Infrastructure.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\7.0.0\\microsoft.bcl.asyncinterfaces.7.0.0.nupkg.sha512",
     "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\microsoft.build.framework\\17.8.3\\microsoft.build.framework.17.8.3.nupkg.sha512",

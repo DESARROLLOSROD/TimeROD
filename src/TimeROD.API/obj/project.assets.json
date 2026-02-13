@@ -1108,6 +1108,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
         "dependencies": {
+          "BCrypt.Net-Next": "4.0.3",
           "Microsoft.EntityFrameworkCore": "9.0.0",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "9.0.0",
           "TimeROD.Core": "1.0.0"
@@ -3273,11 +3274,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.API\\TimeROD.API.csproj",
+      "projectUniqueName": "C:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.API\\TimeROD.API.csproj",
       "projectName": "TimeROD.API",
-      "projectPath": "c:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.API\\TimeROD.API.csproj",
+      "projectPath": "C:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.API\\TimeROD.API.csproj",
       "packagesPath": "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.API\\obj\\",
+      "outputPath": "C:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.API\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -3299,11 +3300,11 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "c:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Core\\TimeROD.Core.csproj": {
-              "projectPath": "c:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Core\\TimeROD.Core.csproj"
+            "C:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Core\\TimeROD.Core.csproj": {
+              "projectPath": "C:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Core\\TimeROD.Core.csproj"
             },
-            "c:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Infrastructure\\TimeROD.Infrastructure.csproj": {
-              "projectPath": "c:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Infrastructure\\TimeROD.Infrastructure.csproj"
+            "C:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Infrastructure\\TimeROD.Infrastructure.csproj": {
+              "projectPath": "C:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Infrastructure\\TimeROD.Infrastructure.csproj"
             }
           }
         }

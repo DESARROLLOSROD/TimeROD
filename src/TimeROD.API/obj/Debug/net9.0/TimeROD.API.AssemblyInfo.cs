@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TimeROD.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0b00a5225418148ce9b8e96882232824d262876e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b377e8057ecf03e7d9dc93ac0dffc03c5df7baa8")]
 [assembly: System.Reflection.AssemblyProductAttribute("TimeROD.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TimeROD.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

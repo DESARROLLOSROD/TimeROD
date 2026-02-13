@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TimeROD.Core.Entities;
 using TimeROD.Infrastructure.Data;
+using TimeROD.Core.Interfaces;
+using TimeROD.Core.DTOs;
 
 namespace TimeROD.API.Controllers;
 
@@ -11,12 +13,12 @@ namespace TimeROD.API.Controllers;
 [Authorize]
 public class UsuariosController : ControllerBase
 {
-    private readonly TimeRODDbContext _context;
+    private readonly IUsuarioService _usuarioService;
     private readonly ILogger<UsuariosController> _logger;
 
-    public UsuariosController(TimeRODDbContext context, ILogger<UsuariosController> logger)
+    public UsuariosController(IUsuarioService usuarioService, ILogger<UsuariosController> logger)
     {
-        _context = context;
+        _usuarioService = usuarioService;
         _logger = logger;
     }
 
@@ -24,16 +26,11 @@ public class UsuariosController : ControllerBase
     /// Obtiene todos los usuarios activos
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuarios()
+    public async Task<ActionResult<IEnumerable<UsuarioDto>>> GetUsuarios()
     {
         try
         {
-            var usuarios = await _context.Usuarios
-                .Include(u => u.Empresa)
-                .Where(u => u.Activo)
-                .OrderBy(u => u.NombreCompleto)
-                .ToListAsync();
-
+            var usuarios = await _usuarioService.GetAllAsync();
             return Ok(usuarios);
         }
         catch (Exception ex)
@@ -47,13 +44,11 @@ public class UsuariosController : ControllerBase
     /// Obtiene un usuario por ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<Usuario>> GetUsuario(int id)
+    public async Task<ActionResult<UsuarioDto>> GetUsuario(int id)
     {
         try
         {
-            var usuario = await _context.Usuarios
-                .Include(u => u.Empresa)
-                .FirstOrDefaultAsync(u => u.Id == id);
+            var usuario = await _usuarioService.GetByIdAsync(id);
 
             if (usuario == null)
             {
@@ -73,15 +68,11 @@ public class UsuariosController : ControllerBase
     /// Obtiene todos los usuarios de una empresa
     /// </summary>
     [HttpGet("empresa/{empresaId}")]
-    public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosByEmpresa(int empresaId)
+    public async Task<ActionResult<IEnumerable<UsuarioDto>>> GetUsuariosByEmpresa(int empresaId)
     {
         try
         {
-            var usuarios = await _context.Usuarios
-                .Where(u => u.EmpresaId == empresaId && u.Activo)
-                .OrderBy(u => u.NombreCompleto)
-                .ToListAsync();
-
+            var usuarios = await _usuarioService.GetAllAsync(empresaId);
             return Ok(usuarios);
         }
         catch (Exception ex)
@@ -96,32 +87,16 @@ public class UsuariosController : ControllerBase
     /// </summary>
     [HttpPost]
     [AllowAnonymous]
-    public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
+    public async Task<ActionResult<UsuarioDto>> PostUsuario(CreateUsuarioDto usuarioDto)
     {
         try
         {
-            // Validar que el email no exista
-            var emailExiste = await _context.Usuarios
-                .AnyAsync(u => u.Email == usuario.Email);
-
-            if (emailExiste)
-            {
-                return BadRequest(new { error = $"El email {usuario.Email} ya está registrado" });
-            }
-
-            // Validar y hashear password
-            if (string.IsNullOrEmpty(usuario.PasswordHash))
-            {
-                return BadRequest(new { error = "Password es requerido" });
-            }
-
-            // Hashear password con BCrypt
-            usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(usuario.PasswordHash);
-
-            _context.Usuarios.Add(usuario);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetUsuario), new { id = usuario.Id }, usuario);
+            var nuevoUsuario = await _usuarioService.CreateAsync(usuarioDto);
+            return CreatedAtAction(nameof(GetUsuario), new { id = nuevoUsuario.Id }, nuevoUsuario);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -134,49 +109,20 @@ public class UsuariosController : ControllerBase
     /// Actualiza un usuario existente
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
+    public async Task<IActionResult> PutUsuario(int id, UpdateUsuarioDto usuarioDto)
     {
-        if (id != usuario.Id)
-        {
-            return BadRequest(new { error = "ID en URL no coincide con ID del usuario" });
-        }
-
         try
         {
-            var usuarioExistente = await _context.Usuarios.FindAsync(id);
-
-            if (usuarioExistente == null)
-            {
-                return NotFound(new { error = $"Usuario con ID {id} no encontrado" });
-            }
-
-            // Validar que el email no esté en uso por otro usuario
-            var emailExiste = await _context.Usuarios
-                .AnyAsync(u => u.Email == usuario.Email && u.Id != id);
-
-            if (emailExiste)
-            {
-                return BadRequest(new { error = $"El email {usuario.Email} ya está registrado por otro usuario" });
-            }
-
-            // Actualizar campos
-            usuarioExistente.Email = usuario.Email;
-            usuarioExistente.NombreCompleto = usuario.NombreCompleto;
-            usuarioExistente.Rol = usuario.Rol;
-            usuarioExistente.Activo = usuario.Activo;
-            usuarioExistente.EmpresaId = usuario.EmpresaId;
-
-            // Solo actualizar password si viene uno nuevo
-            if (!string.IsNullOrEmpty(usuario.PasswordHash) &&
-                usuario.PasswordHash != usuarioExistente.PasswordHash)
-            {
-                // Hashear el nuevo password con BCrypt
-                usuarioExistente.PasswordHash = BCrypt.Net.BCrypt.HashPassword(usuario.PasswordHash);
-            }
-
-            await _context.SaveChangesAsync();
-
+            await _usuarioService.UpdateAsync(id, usuarioDto);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -193,18 +139,12 @@ public class UsuariosController : ControllerBase
     {
         try
         {
-            var usuario = await _context.Usuarios.FindAsync(id);
-
-            if (usuario == null)
-            {
-                return NotFound(new { error = $"Usuario con ID {id} no encontrado" });
-            }
-
-            // Soft delete: solo marcar como inactivo
-            usuario.Activo = false;
-            await _context.SaveChangesAsync();
-
+            await _usuarioService.DeleteAsync(id);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
         }
         catch (Exception ex)
         {
