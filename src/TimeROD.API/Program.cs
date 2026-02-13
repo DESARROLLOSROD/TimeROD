@@ -14,6 +14,15 @@ Console.WriteLine($"DefaultConnection from config: {(string.IsNullOrEmpty(connec
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 Console.WriteLine($"DATABASE_URL env var: {(string.IsNullOrEmpty(databaseUrl) ? "EMPTY" : "EXISTS")}");
 
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    // Mostrar los primeros 30 caracteres para debug
+    var preview = databaseUrl.Length > 30 ? databaseUrl.Substring(0, 30) + "..." : databaseUrl;
+    Console.WriteLine($"DATABASE_URL preview: '{preview}'");
+    Console.WriteLine($"DATABASE_URL length: {databaseUrl.Length}");
+    Console.WriteLine($"DATABASE_URL starts with: '{databaseUrl.Substring(0, Math.Min(15, databaseUrl.Length))}'");
+}
+
 if (builder.Environment.IsProduction())
 {
     if (!string.IsNullOrEmpty(databaseUrl))
