@@ -64,6 +64,15 @@ public class Empleado : BaseEntity
     public bool Activo { get; set; } = true;
 
     /// <summary>
+    /// ID del horario específico del empleado (opcional, sobreescribe el del área)
+    /// </summary>
+    public int? HorarioId { get; set; }
+
+    // Navegación
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Horario? Horario { get; set; }
+
+    /// <summary>
     /// Puesto o cargo del empleado
     /// </summary>
     public string? Puesto { get; set; }

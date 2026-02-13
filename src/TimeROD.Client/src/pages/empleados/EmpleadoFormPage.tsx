@@ -5,9 +5,11 @@ import { ArrowLeft, Save } from 'lucide-react';
 import empleadoService from '../../services/empleadoService';
 import empresaService from '../../services/empresaService';
 import areaService from '../../services/areaService';
+import horarioService from '../../services/horarioService';
 import type { CreateEmpleadoDto, UpdateEmpleadoDto } from '../../types/empleado';
 import type { EmpresaDto } from '../../types/empresa';
 import type { AreaDto } from '../../types/area';
+import type { HorarioDto } from '../../types/horario';
 
 export default function EmpleadoFormPage() {
     const { id } = useParams<{ id: string }>();
@@ -18,6 +20,7 @@ export default function EmpleadoFormPage() {
     const [empresas, setEmpresas] = useState<EmpresaDto[]>([]);
     const [allAreas, setAllAreas] = useState<AreaDto[]>([]);
     const [filteredAreas, setFilteredAreas] = useState<AreaDto[]>([]);
+    const [horarios, setHorarios] = useState<HorarioDto[]>([]);
     const [error, setError] = useState('');
 
     const selectedEmpresaId = watch('empresaId');
@@ -41,12 +44,14 @@ export default function EmpleadoFormPage() {
 
     const loadDependencies = async () => {
         try {
-            const [empresasData, areasData] = await Promise.all([
+            const [empresasData, areasData, horariosData] = await Promise.all([
                 empresaService.getAll(),
-                areaService.getAll()
+                areaService.getAll(),
+                horarioService.getAll()
             ]);
             setEmpresas(empresasData);
             setAllAreas(areasData);
+            setHorarios(horariosData);
         } catch (err) {
             console.error('Error loading dependencies', err);
         }
@@ -57,7 +62,6 @@ export default function EmpleadoFormPage() {
             setLoading(true);
             const data = await empleadoService.getById(empleadoId);
             // Pre-select values
-            // Note: Types require date string, API returns ISO string
             setValue('numeroEmpleado', data.numeroEmpleado);
             setValue('nombre', data.nombre);
             setValue('apellidos', data.apellidos);
@@ -67,9 +71,9 @@ export default function EmpleadoFormPage() {
             setValue('areaId', data.areaId);
             setValue('puesto', data.puesto);
             setValue('activo', data.activo);
+            setValue('horarioId', data.horarioId);
             // Handling optional fields
             if (data.idBiometrico) setValue('idBiometrico', data.idBiometrico);
-            // UsuarioId binding omitted for simplicity, can act as standalone
         } catch (err) {
             setError('Error al cargar el empleado.');
         } finally {
@@ -86,11 +90,8 @@ export default function EmpleadoFormPage() {
             data.areaId = Number(data.areaId);
             data.salarioDiario = Number(data.salarioDiario);
             if (data.idBiometrico) data.idBiometrico = Number(data.idBiometrico);
-
-            // Date handling: Ensure it's a valid ISO string part or date
-            // The input type="date" returns YYYY-MM-DD which is valid for our DTO expected string (usually)
-            // but backend might expect full ISO. Let's send it as is, standard binder usually handles it.
-            // Or explicit: new Date(data.fechaIngreso).toISOString();
+            if (data.horarioId) data.horarioId = Number(data.horarioId);
+            else data.horarioId = null;
 
             if (isEditing) {
                 await empleadoService.update(Number(id), data as UpdateEmpleadoDto);
@@ -200,6 +201,24 @@ export default function EmpleadoFormPage() {
                                     {...register('puesto')}
                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Horario Personalizado (Opcional)</label>
+                                <select
+                                    {...register('horarioId')}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                >
+                                    <option value="">-- Usar horario del área --</option>
+                                    {horarios.map((h) => (
+                                        <option key={h.id} value={h.id}>
+                                            {h.nombre} ({h.horaEntrada} - {h.horaSalida})
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Sobreescribe el horario asignado al área.
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

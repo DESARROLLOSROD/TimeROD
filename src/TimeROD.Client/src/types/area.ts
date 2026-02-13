@@ -5,6 +5,7 @@ export interface AreaDto {
     empresaId: number;
     empresaNombre?: string;
     activo: boolean;
+    horarioId?: number;
 }
 
 export interface CreateAreaDto {
@@ -12,6 +13,7 @@ export interface CreateAreaDto {
     descripcion?: string;
     empresaId: number;
     activo: boolean;
+    horarioId?: number;
 }
 
 export interface UpdateAreaDto {
@@ -19,4 +21,5 @@ export interface UpdateAreaDto {
     descripcion?: string;
     empresaId: number;
     activo: boolean;
+    horarioId?: number;
 }

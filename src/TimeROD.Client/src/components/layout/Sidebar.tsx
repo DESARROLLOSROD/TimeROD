@@ -25,6 +25,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         { name: 'Áreas', href: '/areas', icon: MapPin },
         { name: 'Usuarios', href: '/usuarios', icon: Users },
         { name: 'Empleados', href: '/empleados', icon: Users }, // Reuse Users icon or find a specific one
+        { name: 'Horarios', href: '/horarios', icon: Clock },
         { name: 'Asistencias', href: '/asistencias', icon: Clock },
         { name: 'Reloj Checador', href: '/reloj-checador', icon: Clock },
     ];

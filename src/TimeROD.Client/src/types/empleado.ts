@@ -15,6 +15,7 @@ export interface EmpleadoDto {
     idBiometrico?: number;
     activo: boolean;
     puesto?: string;
+    horarioId?: number;
 }
 
 export interface CreateEmpleadoDto {
@@ -30,6 +31,7 @@ export interface CreateEmpleadoDto {
     idBiometrico?: number;
     activo: boolean;
     puesto?: string;
+    horarioId?: number;
 }
 
 export interface UpdateEmpleadoDto {
@@ -45,4 +47,5 @@ export interface UpdateEmpleadoDto {
     idBiometrico?: number;
     activo: boolean;
     puesto?: string;
+    horarioId?: number;
 }

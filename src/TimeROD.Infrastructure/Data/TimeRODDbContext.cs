@@ -19,6 +19,7 @@ public class TimeRODDbContext : DbContext
     public DbSet<Area> Areas { get; set; }
     public DbSet<Empleado> Empleados { get; set; }
     public DbSet<Asistencia> Asistencias { get; set; }
+    public DbSet<Horario> Horarios { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -120,6 +121,28 @@ public class TimeRODDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.EmpleadoId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configuración de Horario
+        modelBuilder.Entity<Horario>(entity =>
+        {
+            entity.ToTable("horarios");
+            entity.HasKey(h => h.Id);
+            entity.Property(h => h.Nombre).IsRequired().HasMaxLength(100);
+            entity.Property(h => h.HoraEntrada).IsRequired();
+            entity.Property(h => h.HoraSalida).IsRequired();
+
+            // Relación: Horario tiene muchas Areas
+            entity.HasMany(h => h.Areas)
+                .WithOne(a => a.Horario)
+                .HasForeignKey(a => a.HorarioId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Relación: Horario tiene muchos Empleados (override)
+            entity.HasMany(h => h.Empleados)
+                .WithOne(e => e.Horario)
+                .HasForeignKey(e => e.HorarioId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 

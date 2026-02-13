@@ -33,6 +33,15 @@ public class Area : BaseEntity
     /// </summary>
     public bool Activa { get; set; } = true;
 
+    /// <summary>
+    /// ID del horario asignado por defecto al área (opcional)
+    /// </summary>
+    public int? HorarioId { get; set; }
+
+    // Navegación
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Horario? Horario { get; set; }
+
     // Navegación
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public Empresa? Empresa { get; set; }

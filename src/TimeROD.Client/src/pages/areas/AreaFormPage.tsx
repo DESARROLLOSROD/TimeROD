@@ -4,8 +4,10 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import areaService from '../../services/areaService';
 import empresaService from '../../services/empresaService';
+import horarioService from '../../services/horarioService';
 import type { CreateAreaDto, UpdateAreaDto } from '../../types/area';
 import type { EmpresaDto } from '../../types/empresa';
+import type { HorarioDto } from '../../types/horario';
 
 export default function AreaFormPage() {
     const { id } = useParams<{ id: string }>();
@@ -14,6 +16,7 @@ export default function AreaFormPage() {
     const { register, handleSubmit, formState: { errors }, setValue } = useForm<CreateAreaDto & UpdateAreaDto>();
     const [loading, setLoading] = useState(false);
     const [empresas, setEmpresas] = useState<EmpresaDto[]>([]);
+    const [horarios, setHorarios] = useState<HorarioDto[]>([]);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -25,8 +28,12 @@ export default function AreaFormPage() {
 
     const loadDependencies = async () => {
         try {
-            const empresasData = await empresaService.getAll();
+            const [empresasData, horariosData] = await Promise.all([
+                empresaService.getAll(),
+                horarioService.getAll()
+            ]);
             setEmpresas(empresasData);
+            setHorarios(horariosData);
         } catch (err) {
             console.error('Error loading dependencies', err);
         }
@@ -39,6 +46,7 @@ export default function AreaFormPage() {
             setValue('nombre', data.nombre);
             setValue('descripcion', data.descripcion);
             setValue('empresaId', data.empresaId);
+            setValue('horarioId', data.horarioId);
             setValue('activo', data.activo);
         } catch (err) {
             setError('Error al cargar el área.');
@@ -51,8 +59,10 @@ export default function AreaFormPage() {
         setLoading(true);
         setError('');
         try {
-            // Convert empresaId to number
+            // Convert types
             data.empresaId = Number(data.empresaId);
+            if (data.horarioId) data.horarioId = Number(data.horarioId);
+            else data.horarioId = null;
 
             if (isEditing) {
                 await areaService.update(Number(id), data as UpdateAreaDto);
@@ -117,6 +127,24 @@ export default function AreaFormPage() {
                             ))}
                         </select>
                         {errors.empresaId && <p className="mt-1 text-sm text-red-600">{errors.empresaId.message}</p>}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Horario Asignado (Opcional)</label>
+                        <select
+                            {...register('horarioId')}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                        >
+                            <option value="">-- Sin Horario Asignado --</option>
+                            {horarios.map((horario) => (
+                                <option key={horario.id} value={horario.id}>
+                                    {horario.nombre} ({horario.horaEntrada} - {horario.horaSalida})
+                                </option>
+                            ))}
+                        </select>
+                        <p className="mt-1 text-xs text-gray-500">
+                            Si se selecciona, este horario aplicará por defecto a todos los empleados de esta área.
+                        </p>
                     </div>
 
                     <div className="flex items-center">

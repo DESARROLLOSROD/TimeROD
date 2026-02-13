@@ -14,6 +14,8 @@ import EmpleadosPage from './pages/empleados/EmpleadosPage';
 import EmpleadoFormPage from './pages/empleados/EmpleadoFormPage';
 import AsistenciasPage from './pages/asistencias/AsistenciasPage';
 import RelojChecadorPage from './pages/asistencias/RelojChecadorPage';
+import HorariosPage from './pages/horarios/HorariosPage';
+import HorarioFormPage from './pages/horarios/HorarioFormPage';
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -68,6 +70,11 @@ function App() {
               {/* Asistencias Routes */}
               <Route path="/asistencias" element={<AsistenciasPage />} />
               <Route path="/reloj-checador" element={<RelojChecadorPage />} />
+
+              {/* Horarios Routes */}
+              <Route path="/horarios" element={<HorariosPage />} />
+              <Route path="/horarios/nuevo" element={<HorarioFormPage />} />
+              <Route path="/horarios/editar/:id" element={<HorarioFormPage />} />
 
               {/* Future routes will go here: /usuarios, etc. */}
             </Route>
