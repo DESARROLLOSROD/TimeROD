@@ -74,7 +74,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error en login");
-            return StatusCode(500, new { error = "Error al procesar login", detalle = ex.Message });
+            return StatusCode(500, new { error = "Error al procesar login", detalle = ex.Message, stackTrace = ex.ToString() });
         }
     }
 
