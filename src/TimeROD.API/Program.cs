@@ -119,6 +119,7 @@ builder.Services.AddAuthentication(options =>
 // Add services to the container
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IUsuarioService, TimeROD.Infrastructure.Services.UsuarioService>();
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IEmpresaService, TimeROD.Infrastructure.Services.EmpresaService>();
+builder.Services.AddScoped<TimeROD.Core.Interfaces.IAreaService, TimeROD.Infrastructure.Services.AreaService>();
 builder.Services.AddControllers();
 //builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();

@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TimeROD.Core.Entities;
-using TimeROD.Infrastructure.Data;
+using TimeROD.Core.DTOs;
+using TimeROD.Core.Interfaces;
 
 namespace TimeROD.API.Controllers;
 
@@ -11,12 +10,12 @@ namespace TimeROD.API.Controllers;
 [Authorize]
 public class AreasController : ControllerBase
 {
-    private readonly TimeRODDbContext _context;
+    private readonly IAreaService _areaService;
     private readonly ILogger<AreasController> _logger;
 
-    public AreasController(TimeRODDbContext context, ILogger<AreasController> logger)
+    public AreasController(IAreaService areaService, ILogger<AreasController> logger)
     {
-        _context = context;
+        _areaService = areaService;
         _logger = logger;
     }
 
@@ -24,17 +23,11 @@ public class AreasController : ControllerBase
     /// Obtiene todas las áreas activas
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Area>>> GetAreas()
+    public async Task<ActionResult<IEnumerable<AreaDto>>> GetAreas()
     {
         try
         {
-            var areas = await _context.Areas
-                .Include(a => a.Empresa)
-                .Include(a => a.Supervisor)
-                .Where(a => a.Activa)
-                .OrderBy(a => a.Nombre)
-                .ToListAsync();
-
+            var areas = await _areaService.GetAllAsync();
             return Ok(areas);
         }
         catch (Exception ex)
@@ -48,15 +41,11 @@ public class AreasController : ControllerBase
     /// Obtiene un área por ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<Area>> GetArea(int id)
+    public async Task<ActionResult<AreaDto>> GetArea(int id)
     {
         try
         {
-            var area = await _context.Areas
-                .Include(a => a.Empresa)
-                .Include(a => a.Supervisor)
-                .Include(a => a.Empleados)
-                .FirstOrDefaultAsync(a => a.Id == id);
+            var area = await _areaService.GetByIdAsync(id);
 
             if (area == null)
             {
@@ -76,16 +65,11 @@ public class AreasController : ControllerBase
     /// Obtiene todas las áreas de una empresa
     /// </summary>
     [HttpGet("empresa/{empresaId}")]
-    public async Task<ActionResult<IEnumerable<Area>>> GetAreasByEmpresa(int empresaId)
+    public async Task<ActionResult<IEnumerable<AreaDto>>> GetAreasByEmpresa(int empresaId)
     {
         try
         {
-            var areas = await _context.Areas
-                .Include(a => a.Supervisor)
-                .Where(a => a.EmpresaId == empresaId && a.Activa)
-                .OrderBy(a => a.Nombre)
-                .ToListAsync();
-
+            var areas = await _areaService.GetAllByEmpresaAsync(empresaId);
             return Ok(areas);
         }
         catch (Exception ex)
@@ -99,33 +83,16 @@ public class AreasController : ControllerBase
     /// Crea una nueva área
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<Area>> PostArea(Area area)
+    public async Task<ActionResult<AreaDto>> PostArea(CreateAreaDto dto)
     {
         try
         {
-            // Validar que la empresa existe
-            var empresaExiste = await _context.Empresas.AnyAsync(e => e.Id == area.EmpresaId);
-            if (!empresaExiste)
-            {
-                return BadRequest(new { error = $"Empresa con ID {area.EmpresaId} no encontrada" });
-            }
-
-            // Validar que el supervisor existe (si se proporcionó)
-            if (area.SupervisorId.HasValue)
-            {
-                var supervisorExiste = await _context.Usuarios
-                    .AnyAsync(u => u.Id == area.SupervisorId.Value && u.Activo);
-
-                if (!supervisorExiste)
-                {
-                    return BadRequest(new { error = $"Supervisor con ID {area.SupervisorId} no encontrado" });
-                }
-            }
-
-            _context.Areas.Add(area);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetArea), new { id = area.Id }, area);
+            var nuevaArea = await _areaService.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetArea), new { id = nuevaArea.Id }, nuevaArea);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -138,44 +105,20 @@ public class AreasController : ControllerBase
     /// Actualiza un área existente
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutArea(int id, Area area)
+    public async Task<IActionResult> PutArea(int id, UpdateAreaDto dto)
     {
-        if (id != area.Id)
-        {
-            return BadRequest(new { error = "ID en URL no coincide con ID del área" });
-        }
-
         try
         {
-            var areaExistente = await _context.Areas.FindAsync(id);
-
-            if (areaExistente == null)
-            {
-                return NotFound(new { error = $"Área con ID {id} no encontrada" });
-            }
-
-            // Validar supervisor si se proporcionó
-            if (area.SupervisorId.HasValue)
-            {
-                var supervisorExiste = await _context.Usuarios
-                    .AnyAsync(u => u.Id == area.SupervisorId.Value && u.Activo);
-
-                if (!supervisorExiste)
-                {
-                    return BadRequest(new { error = $"Supervisor con ID {area.SupervisorId} no encontrado" });
-                }
-            }
-
-            // Actualizar campos
-            areaExistente.Nombre = area.Nombre;
-            areaExistente.Descripcion = area.Descripcion;
-            areaExistente.SupervisorId = area.SupervisorId;
-            areaExistente.Activa = area.Activa;
-            areaExistente.EmpresaId = area.EmpresaId;
-
-            await _context.SaveChangesAsync();
-
+            await _areaService.UpdateAsync(id, dto);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -192,31 +135,16 @@ public class AreasController : ControllerBase
     {
         try
         {
-            var area = await _context.Areas
-                .Include(a => a.Empleados)
-                .FirstOrDefaultAsync(a => a.Id == id);
-
-            if (area == null)
-            {
-                return NotFound(new { error = $"Área con ID {id} no encontrada" });
-            }
-
-            // Verificar si tiene empleados activos
-            var empleadosActivos = area.Empleados.Count(e => e.Activo);
-            if (empleadosActivos > 0)
-            {
-                return BadRequest(new
-                {
-                    error = $"No se puede desactivar el área porque tiene {empleadosActivos} empleado(s) activo(s)",
-                    empleadosActivos
-                });
-            }
-
-            // Soft delete: solo marcar como inactiva
-            area.Activa = false;
-            await _context.SaveChangesAsync();
-
+            await _areaService.DeleteAsync(id);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
