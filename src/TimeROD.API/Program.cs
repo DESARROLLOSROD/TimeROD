@@ -121,6 +121,7 @@ builder.Services.AddScoped<TimeROD.Core.Interfaces.IUsuarioService, TimeROD.Infr
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IEmpresaService, TimeROD.Infrastructure.Services.EmpresaService>();
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IAreaService, TimeROD.Infrastructure.Services.AreaService>();
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IEmpleadoService, TimeROD.Infrastructure.Services.EmpleadoService>();
+builder.Services.AddScoped<TimeROD.Core.Interfaces.IAsistenciaService, TimeROD.Infrastructure.Services.AsistenciaService>();
 builder.Services.AddControllers();
 //builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();

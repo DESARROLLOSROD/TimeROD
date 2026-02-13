@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TimeROD.Core.Entities;
-using TimeROD.Infrastructure.Data;
+using TimeROD.Core.DTOs;
+using TimeROD.Core.Interfaces;
 
 namespace TimeROD.API.Controllers;
 
@@ -11,12 +10,12 @@ namespace TimeROD.API.Controllers;
 [Authorize]
 public class AsistenciasController : ControllerBase
 {
-    private readonly TimeRODDbContext _context;
+    private readonly IAsistenciaService _asistenciaService;
     private readonly ILogger<AsistenciasController> _logger;
 
-    public AsistenciasController(TimeRODDbContext context, ILogger<AsistenciasController> logger)
+    public AsistenciasController(IAsistenciaService asistenciaService, ILogger<AsistenciasController> logger)
     {
-        _context = context;
+        _asistenciaService = asistenciaService;
         _logger = logger;
     }
 
@@ -24,40 +23,14 @@ public class AsistenciasController : ControllerBase
     /// Obtiene todas las asistencias (con filtros opcionales)
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Asistencia>>> GetAsistencias(
+    public async Task<ActionResult<IEnumerable<AsistenciaDto>>> GetAsistencias(
         [FromQuery] int? empleadoId = null,
         [FromQuery] DateTime? fechaInicio = null,
         [FromQuery] DateTime? fechaFin = null)
     {
         try
         {
-            var query = _context.Asistencias
-                .Include(a => a.Empleado)
-                    .ThenInclude(e => e.Area)
-                .AsQueryable();
-
-            // Filtrar por empleado si se proporciona
-            if (empleadoId.HasValue)
-            {
-                query = query.Where(a => a.EmpleadoId == empleadoId.Value);
-            }
-
-            // Filtrar por rango de fechas
-            if (fechaInicio.HasValue)
-            {
-                query = query.Where(a => a.Fecha >= fechaInicio.Value);
-            }
-
-            if (fechaFin.HasValue)
-            {
-                query = query.Where(a => a.Fecha <= fechaFin.Value);
-            }
-
-            var asistencias = await query
-                .OrderByDescending(a => a.Fecha)
-                .ThenByDescending(a => a.HoraEntrada)
-                .ToListAsync();
-
+            var asistencias = await _asistenciaService.GetAllAsync(empleadoId, fechaInicio, fechaFin);
             return Ok(asistencias);
         }
         catch (Exception ex)
@@ -71,14 +44,11 @@ public class AsistenciasController : ControllerBase
     /// Obtiene una asistencia por ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<Asistencia>> GetAsistencia(int id)
+    public async Task<ActionResult<AsistenciaDto>> GetAsistencia(int id)
     {
         try
         {
-            var asistencia = await _context.Asistencias
-                .Include(a => a.Empleado)
-                    .ThenInclude(e => e.Area)
-                .FirstOrDefaultAsync(a => a.Id == id);
+            var asistencia = await _asistenciaService.GetByIdAsync(id);
 
             if (asistencia == null)
             {
@@ -98,31 +68,14 @@ public class AsistenciasController : ControllerBase
     /// Obtiene asistencias de un empleado específico
     /// </summary>
     [HttpGet("empleado/{empleadoId}")]
-    public async Task<ActionResult<IEnumerable<Asistencia>>> GetAsistenciasByEmpleado(
+    public async Task<ActionResult<IEnumerable<AsistenciaDto>>> GetAsistenciasByEmpleado(
         int empleadoId,
         [FromQuery] DateTime? fechaInicio = null,
         [FromQuery] DateTime? fechaFin = null)
     {
         try
         {
-            var query = _context.Asistencias
-                .Where(a => a.EmpleadoId == empleadoId)
-                .AsQueryable();
-
-            if (fechaInicio.HasValue)
-            {
-                query = query.Where(a => a.Fecha >= fechaInicio.Value);
-            }
-
-            if (fechaFin.HasValue)
-            {
-                query = query.Where(a => a.Fecha <= fechaFin.Value);
-            }
-
-            var asistencias = await query
-                .OrderByDescending(a => a.Fecha)
-                .ToListAsync();
-
+            var asistencias = await _asistenciaService.GetByEmpleadoAsync(empleadoId, fechaInicio, fechaFin);
             return Ok(asistencias);
         }
         catch (Exception ex)
@@ -136,62 +89,16 @@ public class AsistenciasController : ControllerBase
     /// Registra la entrada de un empleado
     /// </summary>
     [HttpPost("entrada")]
-    public async Task<ActionResult<Asistencia>> RegistrarEntrada([FromBody] RegistroEntradaDto dto)
+    public async Task<ActionResult<AsistenciaDto>> RegistrarEntrada([FromBody] RegistroEntradaDto dto)
     {
         try
         {
-            // Validar que el empleado existe y está activo
-            var empleado = await _context.Empleados.FindAsync(dto.EmpleadoId);
-            if (empleado == null || !empleado.Activo)
-            {
-                return BadRequest(new { error = "Empleado no encontrado o inactivo" });
-            }
-
-            var fechaHoy = DateTime.UtcNow.Date;
-
-            // Verificar si ya tiene una entrada hoy
-            var asistenciaExistente = await _context.Asistencias
-                .FirstOrDefaultAsync(a => a.EmpleadoId == dto.EmpleadoId && a.Fecha == fechaHoy);
-
-            if (asistenciaExistente != null && asistenciaExistente.HoraEntrada != null)
-            {
-                return BadRequest(new
-                {
-                    error = "Ya existe un registro de entrada para hoy",
-                    asistencia = asistenciaExistente
-                });
-            }
-
-            // Si existe un registro pero sin hora de entrada, actualizarlo
-            if (asistenciaExistente != null)
-            {
-                asistenciaExistente.HoraEntrada = DateTime.UtcNow;
-                asistenciaExistente.Notas = dto.Notas;
-                await _context.SaveChangesAsync();
-
-                return Ok(asistenciaExistente);
-            }
-
-            // Crear nuevo registro de asistencia
-            var asistencia = new Asistencia
-            {
-                EmpleadoId = dto.EmpleadoId,
-                Fecha = fechaHoy,
-                HoraEntrada = DateTime.UtcNow,
-                Tipo = TipoAsistencia.Normal,
-                Notas = dto.Notas,
-                Aprobado = true
-            };
-
-            // TODO: Implementar lógica de llegada tardía
-            // Por ahora, marcar como puntual
-            asistencia.LlegadaTardia = false;
-            asistencia.MinutosRetraso = 0;
-
-            _context.Asistencias.Add(asistencia);
-            await _context.SaveChangesAsync();
-
+            var asistencia = await _asistenciaService.RegistrarEntradaAsync(dto);
             return CreatedAtAction(nameof(GetAsistencia), new { id = asistencia.Id }, asistencia);
+        }
+        catch (InvalidOperationException ex)
+        {
+             return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -204,48 +111,16 @@ public class AsistenciasController : ControllerBase
     /// Registra la salida de un empleado
     /// </summary>
     [HttpPost("salida")]
-    public async Task<ActionResult<Asistencia>> RegistrarSalida([FromBody] RegistroSalidaDto dto)
+    public async Task<ActionResult<AsistenciaDto>> RegistrarSalida([FromBody] RegistroSalidaDto dto)
     {
         try
         {
-            var fechaHoy = DateTime.UtcNow.Date;
-
-            // Buscar el registro de asistencia del día
-            var asistencia = await _context.Asistencias
-                .FirstOrDefaultAsync(a => a.EmpleadoId == dto.EmpleadoId && a.Fecha == fechaHoy);
-
-            if (asistencia == null)
-            {
-                return BadRequest(new { error = "No existe un registro de entrada para hoy" });
-            }
-
-            if (asistencia.HoraEntrada == null)
-            {
-                return BadRequest(new { error = "No se ha registrado la hora de entrada" });
-            }
-
-            if (asistencia.HoraSalida != null)
-            {
-                return BadRequest(new
-                {
-                    error = "Ya existe un registro de salida para hoy",
-                    asistencia
-                });
-            }
-
-            // Registrar hora de salida
-            asistencia.HoraSalida = DateTime.UtcNow;
-            asistencia.Notas = string.IsNullOrEmpty(dto.Notas)
-                ? asistencia.Notas
-                : $"{asistencia.Notas} | {dto.Notas}";
-
-            // Calcular horas trabajadas
-            var duracion = asistencia.HoraSalida.Value - asistencia.HoraEntrada.Value;
-            asistencia.HorasTrabajadas = (decimal)duracion.TotalHours;
-
-            await _context.SaveChangesAsync();
-
+            var asistencia = await _asistenciaService.RegistrarSalidaAsync(dto);
             return Ok(asistencia);
+        }
+        catch (InvalidOperationException ex)
+        {
+             return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -265,58 +140,8 @@ public class AsistenciasController : ControllerBase
     {
         try
         {
-            // Por defecto, últimos 30 días
-            fechaInicio ??= DateTime.UtcNow.AddDays(-30).Date;
-            fechaFin ??= DateTime.UtcNow.Date;
-
-            var query = _context.Asistencias
-                .Include(a => a.Empleado)
-                    .ThenInclude(e => e.Area)
-                .Include(a => a.Empleado)
-                    .ThenInclude(e => e.Empresa)
-                .Where(a => a.Fecha >= fechaInicio && a.Fecha <= fechaFin);
-
-            if (empresaId.HasValue)
-            {
-                query = query.Where(a => a.Empleado.EmpresaId == empresaId.Value);
-            }
-
-            var asistencias = await query.ToListAsync();
-
-            var reporte = new
-            {
-                FechaInicio = fechaInicio,
-                FechaFin = fechaFin,
-                TotalRegistros = asistencias.Count,
-                TotalHorasTrabajadas = asistencias.Sum(a => a.HorasTrabajadas ?? 0),
-                PromedioHorasPorDia = asistencias.Any()
-                    ? asistencias.Average(a => a.HorasTrabajadas ?? 0)
-                    : 0,
-                LlegadasTardias = asistencias.Count(a => a.LlegadaTardia),
-                Asistencias = asistencias
-                    .OrderByDescending(a => a.Fecha)
-                    .Select(a => new
-                    {
-                        a.Id,
-                        a.Fecha,
-                        a.HoraEntrada,
-                        a.HoraSalida,
-                        a.HorasTrabajadas,
-                        a.LlegadaTardia,
-                        a.MinutosRetraso,
-                        a.Tipo,
-                        Empleado = new
-                        {
-                            a.Empleado.Id,
-                            a.Empleado.NumeroEmpleado,
-                            NombreCompleto = $"{a.Empleado.Nombre} {a.Empleado.Apellidos}",
-                            Area = a.Empleado.Area.Nombre,
-                            Empresa = a.Empleado.Empresa.Nombre
-                        }
-                    })
-            };
-
-            return Ok(reporte);
+             var reporte = await _asistenciaService.GetReporteAsync(fechaInicio, fechaFin, empresaId);
+             return Ok(reporte);
         }
         catch (Exception ex)
         {
@@ -329,41 +154,16 @@ public class AsistenciasController : ControllerBase
     /// Actualiza una asistencia existente
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutAsistencia(int id, Asistencia asistencia)
+    public async Task<IActionResult> PutAsistencia(int id, UpdateAsistenciaDto dto)
     {
-        if (id != asistencia.Id)
-        {
-            return BadRequest(new { error = "ID en URL no coincide con ID de la asistencia" });
-        }
-
         try
         {
-            var asistenciaExistente = await _context.Asistencias.FindAsync(id);
-
-            if (asistenciaExistente == null)
-            {
-                return NotFound(new { error = $"Asistencia con ID {id} no encontrada" });
-            }
-
-            // Actualizar campos
-            asistenciaExistente.HoraEntrada = asistencia.HoraEntrada;
-            asistenciaExistente.HoraSalida = asistencia.HoraSalida;
-            asistenciaExistente.Tipo = asistencia.Tipo;
-            asistenciaExistente.Notas = asistencia.Notas;
-            asistenciaExistente.Aprobado = asistencia.Aprobado;
-            asistenciaExistente.LlegadaTardia = asistencia.LlegadaTardia;
-            asistenciaExistente.MinutosRetraso = asistencia.MinutosRetraso;
-
-            // Recalcular horas trabajadas si hay entrada y salida
-            if (asistenciaExistente.HoraEntrada.HasValue && asistenciaExistente.HoraSalida.HasValue)
-            {
-                var duracion = asistenciaExistente.HoraSalida.Value - asistenciaExistente.HoraEntrada.Value;
-                asistenciaExistente.HorasTrabajadas = (decimal)duracion.TotalHours;
-            }
-
-            await _context.SaveChangesAsync();
-
+            await _asistenciaService.UpdateAsync(id, dto);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -380,17 +180,12 @@ public class AsistenciasController : ControllerBase
     {
         try
         {
-            var asistencia = await _context.Asistencias.FindAsync(id);
-
-            if (asistencia == null)
-            {
-                return NotFound(new { error = $"Asistencia con ID {id} no encontrada" });
-            }
-
-            _context.Asistencias.Remove(asistencia);
-            await _context.SaveChangesAsync();
-
+            await _asistenciaService.DeleteAsync(id);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -400,20 +195,4 @@ public class AsistenciasController : ControllerBase
     }
 }
 
-/// <summary>
-/// DTO para registrar entrada
-/// </summary>
-public class RegistroEntradaDto
-{
-    public int EmpleadoId { get; set; }
-    public string? Notas { get; set; }
-}
 
-/// <summary>
-/// DTO para registrar salida
-/// </summary>
-public class RegistroSalidaDto
-{
-    public int EmpleadoId { get; set; }
-    public string? Notas { get; set; }
-}
