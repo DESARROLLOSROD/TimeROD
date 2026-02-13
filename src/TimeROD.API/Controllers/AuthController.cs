@@ -83,17 +83,24 @@ public class AuthController : ControllerBase
     /// </summary>
     private string GenerarTokenJwt(Usuario usuario)
     {
-        var jwtKey = _configuration["Jwt:Key"];
+        // Priorizar variable de entorno (Producción)
+        var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
 
-        // En producción, leer de variable de entorno
+        // Si no hay variable de entorno, usar configuración (Desarrollo)
         if (string.IsNullOrEmpty(jwtKey))
         {
-            jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+            jwtKey = _configuration["Jwt:Key"];
         }
 
         if (string.IsNullOrEmpty(jwtKey))
         {
-            throw new InvalidOperationException("JWT Key no configurada");
+            throw new InvalidOperationException("JWT Key no configurada (null or empty)");
+        }
+        
+        // Debugging: Verificar longitud (log interno)
+        if (jwtKey.Length < 16)
+        {
+            _logger.LogWarning("JWT Key es muy corta: {Length} caracteres", jwtKey.Length);
         }
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
