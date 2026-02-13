@@ -18,6 +18,7 @@ public class TimeRODDbContext : DbContext
     public DbSet<Usuario> Usuarios { get; set; }
     public DbSet<Area> Areas { get; set; }
     public DbSet<Empleado> Empleados { get; set; }
+    public DbSet<Asistencia> Asistencias { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -102,6 +103,23 @@ public class TimeRODDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UsuarioId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuración de Asistencia
+        modelBuilder.Entity<Asistencia>(entity =>
+        {
+            entity.ToTable("asistencias");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.HorasTrabajadas).HasColumnType("decimal(5,2)");
+
+            // Índice para búsquedas por empleado y fecha
+            entity.HasIndex(e => new { e.EmpleadoId, e.Fecha });
+
+            // Relación: Asistencia pertenece a Empleado
+            entity.HasOne(e => e.Empleado)
+                .WithMany()
+                .HasForeignKey(e => e.EmpleadoId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 

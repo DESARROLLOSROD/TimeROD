@@ -83,4 +83,96 @@ public class EmpresasController : ControllerBase
             return StatusCode(500, new { error = "Error al crear empresa", detalle = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Actualiza una empresa existente
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<IActionResult> PutEmpresa(int id, Empresa empresa)
+    {
+        if (id != empresa.Id)
+        {
+            return BadRequest(new { error = "ID en URL no coincide con ID de la empresa" });
+        }
+
+        try
+        {
+            var empresaExistente = await _context.Empresas.FindAsync(id);
+
+            if (empresaExistente == null)
+            {
+                return NotFound(new { error = $"Empresa con ID {id} no encontrada" });
+            }
+
+            // Validar RFC único (excepto la misma empresa)
+            var rfcExiste = await _context.Empresas
+                .AnyAsync(e => e.RFC == empresa.RFC && e.Id != id);
+
+            if (rfcExiste)
+            {
+                return BadRequest(new { error = $"RFC {empresa.RFC} ya está registrado por otra empresa" });
+            }
+
+            // Actualizar campos
+            empresaExistente.Nombre = empresa.Nombre;
+            empresaExistente.RFC = empresa.RFC;
+            empresaExistente.Direccion = empresa.Direccion;
+            empresaExistente.ConfiguracionJson = empresa.ConfiguracionJson;
+            empresaExistente.Activa = empresa.Activa;
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al actualizar empresa {EmpresaId}", id);
+            return StatusCode(500, new { error = "Error al actualizar empresa", detalle = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Desactiva una empresa (soft delete)
+    /// </summary>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteEmpresa(int id)
+    {
+        try
+        {
+            var empresa = await _context.Empresas
+                .Include(e => e.Usuarios)
+                .Include(e => e.Areas)
+                .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (empresa == null)
+            {
+                return NotFound(new { error = $"Empresa con ID {id} no encontrada" });
+            }
+
+            // Verificar si tiene usuarios o áreas activos
+            var usuariosActivos = empresa.Usuarios.Count(u => u.Activo);
+            var areasActivas = empresa.Areas.Count(a => a.Activa);
+
+            if (usuariosActivos > 0 || areasActivas > 0)
+            {
+                return BadRequest(new
+                {
+                    error = "No se puede desactivar la empresa porque tiene usuarios o áreas activos",
+                    usuariosActivos,
+                    areasActivas
+                });
+            }
+
+            // Soft delete: solo marcar como inactiva
+            empresa.Activa = false;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al desactivar empresa {EmpresaId}", id);
+            return StatusCode(500, new { error = "Error al desactivar empresa", detalle = ex.Message });
+        }
+    }
 }
