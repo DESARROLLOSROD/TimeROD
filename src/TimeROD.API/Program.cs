@@ -4,15 +4,22 @@ using TimeROD.Infrastructure.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configurar conexión a PostgreSQL
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"Is Production: {builder.Environment.IsProduction()}");
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"DefaultConnection from config: {(string.IsNullOrEmpty(connectionString) ? "EMPTY" : "EXISTS")}");
 
 // En Railway, usar la variable de entorno DATABASE_URL si existe
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+Console.WriteLine($"DATABASE_URL env var: {(string.IsNullOrEmpty(databaseUrl) ? "EMPTY" : "EXISTS")}");
+
 if (builder.Environment.IsProduction())
 {
-    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
     if (!string.IsNullOrEmpty(databaseUrl))
     {
         connectionString = databaseUrl;
+        Console.WriteLine("Using DATABASE_URL from environment");
     }
     else
     {
@@ -22,10 +29,13 @@ if (builder.Environment.IsProduction())
 
 if (string.IsNullOrEmpty(connectionString))
 {
+    Console.WriteLine("ERROR: Connection string is empty!");
     throw new InvalidOperationException(
         "Database connection string is not configured. " +
         "Set DATABASE_URL environment variable or configure DefaultConnection in appsettings.json");
 }
+
+Console.WriteLine("Connection string configured successfully");
 
 builder.Services.AddDbContext<TimeRODDbContext>(options =>
     options.UseNpgsql(connectionString));
