@@ -27,8 +27,26 @@ if (builder.Environment.IsProduction())
 {
     if (!string.IsNullOrEmpty(databaseUrl))
     {
-        connectionString = databaseUrl;
-        Console.WriteLine("Using DATABASE_URL from environment");
+        // Railway proporciona DATABASE_URL en formato URI (postgresql://user:pass@host:port/db)
+        // pero Npgsql necesita formato keyword-value (Host=x;Port=y;...)
+        // Vamos a convertirlo
+        try
+        {
+            var uri = new Uri(databaseUrl);
+            var userInfo = uri.UserInfo.Split(':');
+
+            connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+            Console.WriteLine($"Converted DATABASE_URL to Npgsql format");
+            Console.WriteLine($"Host: {uri.Host}");
+            Console.WriteLine($"Port: {uri.Port}");
+            Console.WriteLine($"Database: {uri.LocalPath.TrimStart('/')}");
+            Console.WriteLine($"Username: {userInfo[0]}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ERROR parsing DATABASE_URL: {ex.Message}");
+            throw new InvalidOperationException("DATABASE_URL format is invalid. Expected format: postgresql://user:password@host:port/database", ex);
+        }
     }
     else
     {
