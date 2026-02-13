@@ -95,6 +95,7 @@ public class UsuariosController : ControllerBase
     /// Crea un nuevo usuario
     /// </summary>
     [HttpPost]
+    [AllowAnonymous]
     public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
     {
         try
