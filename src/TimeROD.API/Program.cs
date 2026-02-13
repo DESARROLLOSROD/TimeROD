@@ -120,6 +120,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IUsuarioService, TimeROD.Infrastructure.Services.UsuarioService>();
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IEmpresaService, TimeROD.Infrastructure.Services.EmpresaService>();
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IAreaService, TimeROD.Infrastructure.Services.AreaService>();
+builder.Services.AddScoped<TimeROD.Core.Interfaces.IEmpleadoService, TimeROD.Infrastructure.Services.EmpleadoService>();
 builder.Services.AddControllers();
 //builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();

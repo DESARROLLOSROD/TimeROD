@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TimeROD.Core.Entities;
-using TimeROD.Infrastructure.Data;
+using TimeROD.Core.DTOs;
+using TimeROD.Core.Interfaces;
 
 namespace TimeROD.API.Controllers;
 
@@ -11,12 +10,12 @@ namespace TimeROD.API.Controllers;
 [Authorize]
 public class EmpleadosController : ControllerBase
 {
-    private readonly TimeRODDbContext _context;
+    private readonly IEmpleadoService _empleadoService;
     private readonly ILogger<EmpleadosController> _logger;
 
-    public EmpleadosController(TimeRODDbContext context, ILogger<EmpleadosController> logger)
+    public EmpleadosController(IEmpleadoService empleadoService, ILogger<EmpleadosController> logger)
     {
-        _context = context;
+        _empleadoService = empleadoService;
         _logger = logger;
     }
 
@@ -24,19 +23,11 @@ public class EmpleadosController : ControllerBase
     /// Obtiene todos los empleados activos
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Empleado>>> GetEmpleados()
+    public async Task<ActionResult<IEnumerable<EmpleadoDto>>> GetEmpleados()
     {
         try
         {
-            var empleados = await _context.Empleados
-                .Include(e => e.Empresa)
-                .Include(e => e.Area)
-                .Include(e => e.Usuario)
-                .Where(e => e.Activo)
-                .OrderBy(e => e.Apellidos)
-                .ThenBy(e => e.Nombre)
-                .ToListAsync();
-
+            var empleados = await _empleadoService.GetAllAsync();
             return Ok(empleados);
         }
         catch (Exception ex)
@@ -50,15 +41,11 @@ public class EmpleadosController : ControllerBase
     /// Obtiene un empleado por ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<Empleado>> GetEmpleado(int id)
+    public async Task<ActionResult<EmpleadoDto>> GetEmpleado(int id)
     {
         try
         {
-            var empleado = await _context.Empleados
-                .Include(e => e.Empresa)
-                .Include(e => e.Area)
-                .Include(e => e.Usuario)
-                .FirstOrDefaultAsync(e => e.Id == id);
+            var empleado = await _empleadoService.GetByIdAsync(id);
 
             if (empleado == null)
             {
@@ -78,18 +65,11 @@ public class EmpleadosController : ControllerBase
     /// Obtiene empleados por empresa
     /// </summary>
     [HttpGet("empresa/{empresaId}")]
-    public async Task<ActionResult<IEnumerable<Empleado>>> GetEmpleadosByEmpresa(int empresaId)
+    public async Task<ActionResult<IEnumerable<EmpleadoDto>>> GetEmpleadosByEmpresa(int empresaId)
     {
         try
         {
-            var empleados = await _context.Empleados
-                .Include(e => e.Area)
-                .Include(e => e.Usuario)
-                .Where(e => e.EmpresaId == empresaId && e.Activo)
-                .OrderBy(e => e.Apellidos)
-                .ThenBy(e => e.Nombre)
-                .ToListAsync();
-
+            var empleados = await _empleadoService.GetAllByEmpresaAsync(empresaId);
             return Ok(empleados);
         }
         catch (Exception ex)
@@ -103,17 +83,11 @@ public class EmpleadosController : ControllerBase
     /// Obtiene empleados por área
     /// </summary>
     [HttpGet("area/{areaId}")]
-    public async Task<ActionResult<IEnumerable<Empleado>>> GetEmpleadosByArea(int areaId)
+    public async Task<ActionResult<IEnumerable<EmpleadoDto>>> GetEmpleadosByArea(int areaId)
     {
         try
         {
-            var empleados = await _context.Empleados
-                .Include(e => e.Usuario)
-                .Where(e => e.AreaId == areaId && e.Activo)
-                .OrderBy(e => e.Apellidos)
-                .ThenBy(e => e.Nombre)
-                .ToListAsync();
-
+            var empleados = await _empleadoService.GetAllByAreaAsync(areaId);
             return Ok(empleados);
         }
         catch (Exception ex)
@@ -127,15 +101,11 @@ public class EmpleadosController : ControllerBase
     /// Busca empleado por número de empleado
     /// </summary>
     [HttpGet("numero/{numeroEmpleado}")]
-    public async Task<ActionResult<Empleado>> GetEmpleadoByNumero(string numeroEmpleado)
+    public async Task<ActionResult<EmpleadoDto>> GetEmpleadoByNumero(string numeroEmpleado)
     {
         try
         {
-            var empleado = await _context.Empleados
-                .Include(e => e.Empresa)
-                .Include(e => e.Area)
-                .Include(e => e.Usuario)
-                .FirstOrDefaultAsync(e => e.NumeroEmpleado == numeroEmpleado);
+            var empleado = await _empleadoService.GetByNumeroEmpleadoAsync(numeroEmpleado);
 
             if (empleado == null)
             {
@@ -155,48 +125,16 @@ public class EmpleadosController : ControllerBase
     /// Crea un nuevo empleado
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<Empleado>> PostEmpleado(Empleado empleado)
+    public async Task<ActionResult<EmpleadoDto>> PostEmpleado(CreateEmpleadoDto dto)
     {
         try
         {
-            // Validar que la empresa existe
-            var empresaExiste = await _context.Empresas.AnyAsync(e => e.Id == empleado.EmpresaId);
-            if (!empresaExiste)
-            {
-                return BadRequest(new { error = $"Empresa con ID {empleado.EmpresaId} no encontrada" });
-            }
-
-            // Validar que el área existe
-            var areaExiste = await _context.Areas
-                .AnyAsync(a => a.Id == empleado.AreaId && a.EmpresaId == empleado.EmpresaId);
-            if (!areaExiste)
-            {
-                return BadRequest(new { error = $"Área con ID {empleado.AreaId} no encontrada o no pertenece a la empresa" });
-            }
-
-            // Validar que el número de empleado no exista
-            var numeroExiste = await _context.Empleados
-                .AnyAsync(e => e.NumeroEmpleado == empleado.NumeroEmpleado && e.EmpresaId == empleado.EmpresaId);
-            if (numeroExiste)
-            {
-                return BadRequest(new { error = $"Número de empleado {empleado.NumeroEmpleado} ya existe en esta empresa" });
-            }
-
-            // Validar usuario si se proporcionó
-            if (empleado.UsuarioId.HasValue)
-            {
-                var usuarioExiste = await _context.Usuarios
-                    .AnyAsync(u => u.Id == empleado.UsuarioId.Value && u.EmpresaId == empleado.EmpresaId);
-                if (!usuarioExiste)
-                {
-                    return BadRequest(new { error = $"Usuario con ID {empleado.UsuarioId} no encontrado o no pertenece a la empresa" });
-                }
-            }
-
-            _context.Empleados.Add(empleado);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetEmpleado), new { id = empleado.Id }, empleado);
+            var nuevoEmpleado = await _empleadoService.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetEmpleado), new { id = nuevoEmpleado.Id }, nuevoEmpleado);
+        }
+        catch (InvalidOperationException ex)
+        {
+             return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -209,67 +147,20 @@ public class EmpleadosController : ControllerBase
     /// Actualiza un empleado existente
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutEmpleado(int id, Empleado empleado)
+    public async Task<IActionResult> PutEmpleado(int id, UpdateEmpleadoDto dto)
     {
-        if (id != empleado.Id)
-        {
-            return BadRequest(new { error = "ID en URL no coincide con ID del empleado" });
-        }
-
         try
         {
-            var empleadoExistente = await _context.Empleados.FindAsync(id);
-
-            if (empleadoExistente == null)
-            {
-                return NotFound(new { error = $"Empleado con ID {id} no encontrado" });
-            }
-
-            // Validar que el área existe
-            var areaExiste = await _context.Areas
-                .AnyAsync(a => a.Id == empleado.AreaId && a.EmpresaId == empleado.EmpresaId);
-            if (!areaExiste)
-            {
-                return BadRequest(new { error = $"Área con ID {empleado.AreaId} no encontrada o no pertenece a la empresa" });
-            }
-
-            // Validar número de empleado único (excepto el mismo)
-            var numeroExiste = await _context.Empleados
-                .AnyAsync(e => e.NumeroEmpleado == empleado.NumeroEmpleado &&
-                              e.EmpresaId == empleado.EmpresaId &&
-                              e.Id != id);
-            if (numeroExiste)
-            {
-                return BadRequest(new { error = $"Número de empleado {empleado.NumeroEmpleado} ya existe en esta empresa" });
-            }
-
-            // Validar usuario si se proporcionó
-            if (empleado.UsuarioId.HasValue)
-            {
-                var usuarioExiste = await _context.Usuarios
-                    .AnyAsync(u => u.Id == empleado.UsuarioId.Value && u.EmpresaId == empleado.EmpresaId);
-                if (!usuarioExiste)
-                {
-                    return BadRequest(new { error = $"Usuario con ID {empleado.UsuarioId} no encontrado o no pertenece a la empresa" });
-                }
-            }
-
-            // Actualizar campos
-            empleadoExistente.NumeroEmpleado = empleado.NumeroEmpleado;
-            empleadoExistente.Nombre = empleado.Nombre;
-            empleadoExistente.Apellidos = empleado.Apellidos;
-            empleadoExistente.AreaId = empleado.AreaId;
-            empleadoExistente.FechaIngreso = empleado.FechaIngreso;
-            empleadoExistente.SalarioDiario = empleado.SalarioDiario;
-            empleadoExistente.Puesto = empleado.Puesto;
-            empleadoExistente.TurnoId = empleado.TurnoId;
-            empleadoExistente.IdBiometrico = empleado.IdBiometrico;
-            empleadoExistente.UsuarioId = empleado.UsuarioId;
-            empleadoExistente.Activo = empleado.Activo;
-
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+             await _empleadoService.UpdateAsync(id, dto);
+             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+             return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+             return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -286,18 +177,12 @@ public class EmpleadosController : ControllerBase
     {
         try
         {
-            var empleado = await _context.Empleados.FindAsync(id);
-
-            if (empleado == null)
-            {
-                return NotFound(new { error = $"Empleado con ID {id} no encontrado" });
-            }
-
-            // Soft delete: solo marcar como inactivo
-            empleado.Activo = false;
-            await _context.SaveChangesAsync();
-
+            await _empleadoService.DeleteAsync(id);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+             return NotFound(new { error = ex.Message });
         }
         catch (Exception ex)
         {
