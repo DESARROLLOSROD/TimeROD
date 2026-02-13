@@ -25,7 +25,10 @@
       "Bash(dotnet clean:*)",
       "Bash(dotnet build:*)",
       "Bash(curl:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Add Railway deployment configuration\n\n- Add Dockerfile for containerized deployment\n- Add .dockerignore to optimize Docker builds\n- Add appsettings.Production.json for Railway environment\n- Configure app to use DATABASE_URL environment variable\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(railway:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
