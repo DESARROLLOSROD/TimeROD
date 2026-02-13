@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TimeROD.Core.Entities;
-using TimeROD.Infrastructure.Data;
+using TimeROD.Core.DTOs;
+using TimeROD.Core.Interfaces;
 
 namespace TimeROD.API.Controllers;
 
@@ -11,12 +10,12 @@ namespace TimeROD.API.Controllers;
 [Authorize]
 public class EmpresasController : ControllerBase
 {
-    private readonly TimeRODDbContext _context;
+    private readonly IEmpresaService _empresaService;
     private readonly ILogger<EmpresasController> _logger;
 
-    public EmpresasController(TimeRODDbContext context, ILogger<EmpresasController> logger)
+    public EmpresasController(IEmpresaService empresaService, ILogger<EmpresasController> logger)
     {
-        _context = context;
+        _empresaService = empresaService;
         _logger = logger;
     }
 
@@ -24,15 +23,11 @@ public class EmpresasController : ControllerBase
     /// Obtiene todas las empresas
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Empresa>>> GetEmpresas()
+    public async Task<ActionResult<IEnumerable<EmpresaDto>>> GetEmpresas()
     {
         try
         {
-            var empresas = await _context.Empresas
-                .Where(e => e.Activa)
-                .OrderBy(e => e.Nombre)
-                .ToListAsync();
-
+            var empresas = await _empresaService.GetAllAsync();
             return Ok(empresas);
         }
         catch (Exception ex)
@@ -46,11 +41,11 @@ public class EmpresasController : ControllerBase
     /// Obtiene una empresa por ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<Empresa>> GetEmpresa(int id)
+    public async Task<ActionResult<EmpresaDto>> GetEmpresa(int id)
     {
         try
         {
-            var empresa = await _context.Empresas.FindAsync(id);
+            var empresa = await _empresaService.GetByIdAsync(id);
 
             if (empresa == null)
             {
@@ -70,14 +65,16 @@ public class EmpresasController : ControllerBase
     /// Crea una nueva empresa
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<Empresa>> PostEmpresa(Empresa empresa)
+    public async Task<ActionResult<EmpresaDto>> PostEmpresa(CreateEmpresaDto dto)
     {
         try
         {
-            _context.Empresas.Add(empresa);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetEmpresa), new { id = empresa.Id }, empresa);
+            var nuevaEmpresa = await _empresaService.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetEmpresa), new { id = nuevaEmpresa.Id }, nuevaEmpresa);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -90,41 +87,20 @@ public class EmpresasController : ControllerBase
     /// Actualiza una empresa existente
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutEmpresa(int id, Empresa empresa)
+    public async Task<IActionResult> PutEmpresa(int id, UpdateEmpresaDto dto)
     {
-        if (id != empresa.Id)
-        {
-            return BadRequest(new { error = "ID en URL no coincide con ID de la empresa" });
-        }
-
         try
         {
-            var empresaExistente = await _context.Empresas.FindAsync(id);
-
-            if (empresaExistente == null)
-            {
-                return NotFound(new { error = $"Empresa con ID {id} no encontrada" });
-            }
-
-            // Validar RFC único (excepto la misma empresa)
-            var rfcExiste = await _context.Empresas
-                .AnyAsync(e => e.RFC == empresa.RFC && e.Id != id);
-
-            if (rfcExiste)
-            {
-                return BadRequest(new { error = $"RFC {empresa.RFC} ya está registrado por otra empresa" });
-            }
-
-            // Actualizar campos
-            empresaExistente.Nombre = empresa.Nombre;
-            empresaExistente.RFC = empresa.RFC;
-            empresaExistente.Direccion = empresa.Direccion;
-            empresaExistente.ConfiguracionJson = empresa.ConfiguracionJson;
-            empresaExistente.Activa = empresa.Activa;
-
-            await _context.SaveChangesAsync();
-
+            await _empresaService.UpdateAsync(id, dto);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -141,35 +117,16 @@ public class EmpresasController : ControllerBase
     {
         try
         {
-            var empresa = await _context.Empresas
-                .Include(e => e.Usuarios)
-                .Include(e => e.Areas)
-                .FirstOrDefaultAsync(e => e.Id == id);
-
-            if (empresa == null)
-            {
-                return NotFound(new { error = $"Empresa con ID {id} no encontrada" });
-            }
-
-            // Verificar si tiene usuarios o áreas activos
-            var usuariosActivos = empresa.Usuarios.Count(u => u.Activo);
-            var areasActivas = empresa.Areas.Count(a => a.Activa);
-
-            if (usuariosActivos > 0 || areasActivas > 0)
-            {
-                return BadRequest(new
-                {
-                    error = "No se puede desactivar la empresa porque tiene usuarios o áreas activos",
-                    usuariosActivos,
-                    areasActivas
-                });
-            }
-
-            // Soft delete: solo marcar como inactiva
-            empresa.Activa = false;
-            await _context.SaveChangesAsync();
-
+            await _empresaService.DeleteAsync(id);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
