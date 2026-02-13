@@ -1,0 +1,16 @@
+**/.dockerignore
+**/.git
+**/.gitignore
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/.toolstarget
+**/node_modules
+**/npm-debug.log
+**/Dockerfile*
+**/.env
+**/.env.*
+**/docker-compose*
+**/*.md
+**/.editorconfig

@@ -24,7 +24,8 @@
       "Bash(dotnet remove:*)",
       "Bash(dotnet clean:*)",
       "Bash(dotnet build:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git add:*)"
     ]
   }
 }
