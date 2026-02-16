@@ -32,4 +32,6 @@ public class CreateEmpleadoDto
     public string? IdBiometrico { get; set; }
 
     public string? Puesto { get; set; }
+
+    public int? HorarioId { get; set; }
 }

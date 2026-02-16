@@ -15,4 +15,6 @@ public class UpdateAreaDto
     
     [Required]
     public int EmpresaId { get; set; }
+
+    public int? HorarioId { get; set; }
 }

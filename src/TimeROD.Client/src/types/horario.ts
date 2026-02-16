@@ -14,6 +14,10 @@ export interface CreateHorarioDto {
     toleranciaMinutos: number;
 }
 
-export interface UpdateHorarioDto extends CreateHorarioDto {
+export interface UpdateHorarioDto {
+    nombre: string;
+    horaEntrada: string;
+    horaSalida: string;
+    toleranciaMinutos: number;
     activo: boolean;
 }

@@ -23,6 +23,7 @@ public class AreaService : IAreaService
         var areas = await _context.Areas
             .Include(a => a.Empresa)
             .Include(a => a.Supervisor)
+            .Include(a => a.Horario)
             .Where(a => a.Activa)
             .OrderBy(a => a.Nombre)
             .ToListAsync();
@@ -35,6 +36,7 @@ public class AreaService : IAreaService
          var areas = await _context.Areas
             .Include(a => a.Empresa)
             .Include(a => a.Supervisor)
+            .Include(a => a.Horario)
             .Where(a => a.EmpresaId == empresaId && a.Activa)
             .OrderBy(a => a.Nombre)
             .ToListAsync();
@@ -47,6 +49,7 @@ public class AreaService : IAreaService
         var area = await _context.Areas
             .Include(a => a.Empresa)
             .Include(a => a.Supervisor)
+            .Include(a => a.Horario)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         return area == null ? null : MapToDto(area);
@@ -70,6 +73,19 @@ public class AreaService : IAreaService
             if (!supervisorExiste)
             {
                 throw new InvalidOperationException($"Supervisor con ID {dto.SupervisorId} no encontrado o inactivo");
+                throw new InvalidOperationException($"Supervisor con ID {dto.SupervisorId} no encontrado o inactivo");
+            }
+        }
+
+        // Validar Horario (si aplica)
+        if (dto.HorarioId.HasValue)
+        {
+            var horarioExiste = await _context.Horarios
+                .AnyAsync(h => h.Id == dto.HorarioId.Value && h.Activo);
+
+            if (!horarioExiste)
+            {
+                throw new InvalidOperationException($"Horario con ID {dto.HorarioId} no encontrado o inactivo");
             }
         }
 
@@ -79,6 +95,7 @@ public class AreaService : IAreaService
             Descripcion = dto.Descripcion,
             EmpresaId = dto.EmpresaId,
             SupervisorId = dto.SupervisorId,
+            HorarioId = dto.HorarioId,
             Activa = true,
             FechaCreacion = DateTime.UtcNow
         };
@@ -90,6 +107,8 @@ public class AreaService : IAreaService
         await _context.Entry(area).Reference(a => a.Empresa).LoadAsync();
         if (area.SupervisorId.HasValue)
             await _context.Entry(area).Reference(a => a.Supervisor).LoadAsync();
+        if (area.HorarioId.HasValue)
+            await _context.Entry(area).Reference(a => a.Horario).LoadAsync();
 
         return MapToDto(area);
     }
@@ -124,10 +143,23 @@ public class AreaService : IAreaService
             }
         }
 
+        // Validar Horario
+        if (dto.HorarioId.HasValue && dto.HorarioId != area.HorarioId)
+        {
+            var horarioExiste = await _context.Horarios
+                .AnyAsync(h => h.Id == dto.HorarioId.Value && h.Activo);
+
+            if (!horarioExiste)
+            {
+                throw new InvalidOperationException($"Horario con ID {dto.HorarioId} no encontrado o inactivo");
+            }
+        }
+
         area.Nombre = dto.Nombre;
         area.Descripcion = dto.Descripcion;
         area.EmpresaId = dto.EmpresaId;
         area.SupervisorId = dto.SupervisorId;
+        area.HorarioId = dto.HorarioId;
         area.Activa = dto.Activa;
         area.FechaActualizacion = DateTime.UtcNow;
 
@@ -169,7 +201,9 @@ public class AreaService : IAreaService
             EmpresaId = a.EmpresaId,
             EmpresaNombre = a.Empresa?.Nombre,
             SupervisorId = a.SupervisorId,
-            SupervisorNombre = a.Supervisor?.NombreCompleto
+            SupervisorNombre = a.Supervisor?.NombreCompleto,
+            HorarioId = a.HorarioId,
+            HorarioNombre = a.Horario?.Nombre
         };
     }
 }

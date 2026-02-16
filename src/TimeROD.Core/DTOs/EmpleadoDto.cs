@@ -18,4 +18,6 @@ public class EmpleadoDto
     public string? IdBiometrico { get; set; }
     public bool Activo { get; set; }
     public string? Puesto { get; set; }
+    public int? HorarioId { get; set; }
+    public string? HorarioNombre { get; set; }
 }

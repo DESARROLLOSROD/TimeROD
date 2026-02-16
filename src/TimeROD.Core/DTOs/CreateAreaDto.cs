@@ -13,4 +13,6 @@ public class CreateAreaDto
     public string? Descripcion { get; set; }
     
     public int? SupervisorId { get; set; }
+
+    public int? HorarioId { get; set; }
 }

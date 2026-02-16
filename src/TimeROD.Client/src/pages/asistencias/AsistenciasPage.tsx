@@ -29,7 +29,11 @@ export default function AsistenciasPage() {
             // Load today's attendances by default? Or just all? Let's load recent.
             // For now, load all without filters or maybe last 7 days.
             // existing implementation of getAll allows optional params.
-            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const today = `${year}-${month}-${day}`;
             setFechaInicio(today);
             setFechaFin(today);
             await loadAsistencias(today, today);
@@ -141,7 +145,7 @@ export default function AsistenciasPage() {
                                             </h3>
                                             <div className="flex items-center text-sm text-gray-500 mt-1">
                                                 <Calendar className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                                                <span className="mr-4">{new Date(asistencia.fecha).toLocaleDateString()}</span>
+                                                <span className="mr-4">{new Date(asistencia.fecha + 'T00:00:00').toLocaleDateString()}</span>
 
                                                 <Clock className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
                                                 <span className="mr-2 text-green-600 font-medium">Entrada: {asistencia.horaEntrada}</span>
@@ -152,6 +156,11 @@ export default function AsistenciasPage() {
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-end">
+                                        {asistencia.llegadaTardia && (
+                                            <span className="mb-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                Tarde ({asistencia.minutosRetraso} min)
+                                            </span>
+                                        )}
                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${asistencia.tipo === 'Normal' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                                             }`}>
                                             {asistencia.tipo}

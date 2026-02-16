@@ -12,6 +12,9 @@ export interface AsistenciaDto {
     horaSalida?: string; // HH:mm:ss
     tipo: string; // 'Normal', 'Retardo', 'Falta', etc.
     observaciones?: string;
+    llegadaTardia: boolean;
+    minutosRetraso?: number;
+    horasTrabajadas?: number;
 }
 
 export interface RegistroEntradaDto {

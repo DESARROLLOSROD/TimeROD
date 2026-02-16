@@ -33,5 +33,9 @@ public class UpdateEmpleadoDto
 
     public bool Activo { get; set; }
 
+    public bool Activo { get; set; }
+
     public string? Puesto { get; set; }
+
+    public int? HorarioId { get; set; }
 }

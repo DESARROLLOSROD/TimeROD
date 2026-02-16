@@ -55,7 +55,10 @@ export default function RelojChecadorPage() {
 
         try {
             const now = new Date();
-            const fecha = now.toISOString().split('T')[0];
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const fecha = `${year}-${month}-${day}`;
             const hora = now.toTimeString().split(' ')[0]; // HH:mm:ss
 
             const baseDto = {
@@ -74,7 +77,12 @@ export default function RelojChecadorPage() {
                 setMessage({ type: 'success', text: `Salida registrada correctamente a las ${hora}` });
             }
 
-            // Clear selection after success? Maybe keep it for rapid testing.
+
+            // Clear selection and message after 3 seconds
+            setTimeout(() => {
+                setEmpleadoId('');
+                setMessage(null);
+            }, 3000);
         } catch (err: any) {
             const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Error al registrar asistencia.';
             setMessage({ type: 'error', text: errorMsg });

@@ -69,10 +69,12 @@ public class AsistenciaService : IAsistenciaService
 
     public async Task<AsistenciaDto> RegistrarEntradaAsync(RegistroEntradaDto dto)
     {
-         // Validar que el empleado existe y está activo
+        // Validar que el empleado existe y está activo
         var empleado = await _context.Empleados
             .Include(e => e.Empresa)
             .Include(e => e.Area)
+                .ThenInclude(a => a.Horario)
+            .Include(e => e.Horario)
             .FirstOrDefaultAsync(e => e.Id == dto.EmpleadoId);
 
         if (empleado == null || !empleado.Activo)
@@ -91,10 +93,60 @@ public class AsistenciaService : IAsistenciaService
              throw new InvalidOperationException("Ya existe un registro de entrada para hoy");
         }
 
-        // Si existe un registro pero sin hora de entrada (caso raro, pero posible si se creó manualmente el registro vacío), actualizarlo
+        // Lógica de Detección de Llegadas Tardías
+        bool llegadaTardia = false;
+        int minutosRetraso = 0;
+        var horaEntradaRealUtc = DateTime.UtcNow;
+
+        // Determinar Horario aplicable (Empleado > Area)
+        var horario = empleado.Horario ?? empleado.Area?.Horario;
+
+        if (horario != null && horario.Activo)
+        {
+            try
+            {
+                // Asumir zona horaria de México (Central) para comparar "Hora Local"
+                // En un futuro esto debería venir de la configuración de la Empresa
+                var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)"); 
+                // Nota: En Linux/Docker puede requerir "America/Mexico_City"
+                // Para compatibilidad cross-platform, intentamos buscar por ID IANA si falla el de Windows o viceversa
+                // Una forma robusta es usar una librería como NodaTime, pero por ahora usaremos try-catch o ID condicional
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                // Fallback para entornos Linux/Docker
+            }
+
+            TimeZoneInfo mxTimeZone;
+            try 
+            {
+                mxTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
+            }
+            catch
+            {
+                 mxTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Mexico_City");
+            }
+
+            var horaEntradaLocal = TimeZoneInfo.ConvertTimeFromUtc(horaEntradaRealUtc, mxTimeZone);
+            var fechaLocal = horaEntradaLocal.Date;
+            
+            // Construir la fecha/hora esperada de entrada en tiempo local
+            var entradaEsperadaLocal = fechaLocal.Add(horario.HoraEntrada);
+            var limiteEntrada = entradaEsperadaLocal.AddMinutes(horario.ToleranciaMinutos);
+
+            if (horaEntradaLocal > limiteEntrada)
+            {
+                llegadaTardia = true;
+                minutosRetraso = (int)(horaEntradaLocal - entradaEsperadaLocal).TotalMinutes;
+            }
+        }
+
+        // Si existe un registro pero sin hora de entrada, actualizarlo
         if (asistenciaExistente != null)
         {
-            asistenciaExistente.HoraEntrada = DateTime.UtcNow;
+            asistenciaExistente.HoraEntrada = horaEntradaRealUtc;
+            asistenciaExistente.LlegadaTardia = llegadaTardia;
+            asistenciaExistente.MinutosRetraso = minutosRetraso;
             asistenciaExistente.Notas = dto.Notas;
             await _context.SaveChangesAsync();
             
@@ -112,13 +164,13 @@ public class AsistenciaService : IAsistenciaService
         var asistencia = new Asistencia
         {
             EmpleadoId = dto.EmpleadoId,
-            Fecha = fechaHoy,
-            HoraEntrada = DateTime.UtcNow,
+            Fecha = fechaHoy, // La Fecha sigue siendo UTC Date (00:00) para query
+            HoraEntrada = horaEntradaRealUtc,
             Tipo = TipoAsistencia.Normal,
             Notas = dto.Notas,
             Aprobado = true,
-            LlegadaTardia = false, // TODO: Implementar lógica de horarios
-            MinutosRetraso = 0
+            LlegadaTardia = llegadaTardia,
+            MinutosRetraso = minutosRetraso
         };
 
         _context.Asistencias.Add(asistencia);

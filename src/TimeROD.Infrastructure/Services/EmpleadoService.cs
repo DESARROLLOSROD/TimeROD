@@ -24,6 +24,7 @@ public class EmpleadoService : IEmpleadoService
             .Include(e => e.Empresa)
             .Include(e => e.Area)
             .Include(e => e.Usuario)
+            .Include(e => e.Horario)
             .Where(e => e.Activo)
             .OrderBy(e => e.Apellidos)
             .ThenBy(e => e.Nombre)
@@ -37,6 +38,7 @@ public class EmpleadoService : IEmpleadoService
         var empleados = await _context.Empleados
             .Include(e => e.Area)
             .Include(e => e.Usuario)
+            .Include(e => e.Horario)
             .Where(e => e.EmpresaId == empresaId && e.Activo)
             .OrderBy(e => e.Apellidos)
             .ThenBy(e => e.Nombre)
@@ -50,6 +52,7 @@ public class EmpleadoService : IEmpleadoService
         var empleados = await _context.Empleados
             .Include(e => e.Usuario)
             .Include(e => e.Empresa)
+            .Include(e => e.Horario)
             .Where(e => e.AreaId == areaId && e.Activo)
             .OrderBy(e => e.Apellidos)
             .ThenBy(e => e.Nombre)
@@ -64,6 +67,7 @@ public class EmpleadoService : IEmpleadoService
             .Include(e => e.Empresa)
             .Include(e => e.Area)
             .Include(e => e.Usuario)
+            .Include(e => e.Horario)
             .FirstOrDefaultAsync(e => e.Id == id);
 
         return empleado == null ? null : MapToDto(empleado);
@@ -75,6 +79,7 @@ public class EmpleadoService : IEmpleadoService
             .Include(e => e.Empresa)
             .Include(e => e.Area)
             .Include(e => e.Usuario)
+            .Include(e => e.Horario)
             .FirstOrDefaultAsync(e => e.NumeroEmpleado == numeroEmpleado);
 
         return empleado == null ? null : MapToDto(empleado);
@@ -116,6 +121,17 @@ public class EmpleadoService : IEmpleadoService
              throw new InvalidOperationException($"Número de empleado {dto.NumeroEmpleado} ya existe en esta empresa");
         }
 
+        // 5. Validar Horario (si aplica)
+        if (dto.HorarioId.HasValue)
+        {
+            var horarioExiste = await _context.Horarios
+                .AnyAsync(h => h.Id == dto.HorarioId.Value && h.Activo);
+            if (!horarioExiste)
+            {
+                throw new InvalidOperationException($"Horario con ID {dto.HorarioId} no encontrado o inactivo");
+            }
+        }
+
         var empleado = new Empleado
         {
             EmpresaId = dto.EmpresaId,
@@ -129,6 +145,7 @@ public class EmpleadoService : IEmpleadoService
             TurnoId = dto.TurnoId,
             IdBiometrico = dto.IdBiometrico,
             Puesto = dto.Puesto,
+            HorarioId = dto.HorarioId,
             Activo = true,
             FechaCreacion = DateTime.UtcNow
         };
@@ -141,6 +158,8 @@ public class EmpleadoService : IEmpleadoService
         await _context.Entry(empleado).Reference(e => e.Area).LoadAsync();
         if (empleado.UsuarioId.HasValue)
             await _context.Entry(empleado).Reference(e => e.Usuario).LoadAsync();
+        if (empleado.HorarioId.HasValue)
+            await _context.Entry(empleado).Reference(e => e.Horario).LoadAsync();
 
         return MapToDto(empleado);
     }
@@ -186,6 +205,17 @@ public class EmpleadoService : IEmpleadoService
              throw new InvalidOperationException($"Número de empleado {dto.NumeroEmpleado} ya existe en esta empresa");
         }
 
+        // 5. Validar Horario
+        if (dto.HorarioId.HasValue && dto.HorarioId != empleado.HorarioId)
+        {
+            var horarioExiste = await _context.Horarios
+                .AnyAsync(h => h.Id == dto.HorarioId.Value && h.Activo);
+            if (!horarioExiste)
+            {
+                throw new InvalidOperationException($"Horario con ID {dto.HorarioId} no encontrado o inactivo");
+            }
+        }
+
         empleado.EmpresaId = dto.EmpresaId;
         empleado.AreaId = dto.AreaId;
         empleado.UsuarioId = dto.UsuarioId;
@@ -196,7 +226,9 @@ public class EmpleadoService : IEmpleadoService
         empleado.SalarioDiario = dto.SalarioDiario;
         empleado.TurnoId = dto.TurnoId;
         empleado.IdBiometrico = dto.IdBiometrico;
+        empleado.IdBiometrico = dto.IdBiometrico;
         empleado.Puesto = dto.Puesto;
+        empleado.HorarioId = dto.HorarioId;
         empleado.Activo = dto.Activo;
         empleado.FechaActualizacion = DateTime.UtcNow;
 
@@ -237,7 +269,9 @@ public class EmpleadoService : IEmpleadoService
             TurnoId = e.TurnoId,
             IdBiometrico = e.IdBiometrico,
             Activo = e.Activo,
-            Puesto = e.Puesto
+            Puesto = e.Puesto,
+            HorarioId = e.HorarioId,
+            HorarioNombre = e.Horario?.Nombre
         };
     }
 }

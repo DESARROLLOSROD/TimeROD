@@ -11,4 +11,7 @@ public class AreaDto
     
     public int? SupervisorId { get; set; }
     public string? SupervisorNombre { get; set; }
+    
+    public int? HorarioId { get; set; }
+    public string? HorarioNombre { get; set; }
 }
