@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "lLYD1ElkErY=",
+  "dgSpecHash": "HHcO/IIqLm8=",
   "success": true,
   "projectFilePath": "C:\\Users\\ADMIN_SISTEMAS\\OneDrive - Desarrollos ROD\\Documentos\\Desarrollos\\TimeROD\\src\\TimeROD.Infrastructure\\TimeROD.Infrastructure.csproj",
   "expectedPackageFiles": [
@@ -33,6 +33,7 @@
     "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\mono.texttemplating\\3.0.0\\mono.texttemplating.3.0.0.nupkg.sha512",
     "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\npgsql\\9.0.0\\npgsql.9.0.0.nupkg.sha512",
     "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\9.0.0\\npgsql.entityframeworkcore.postgresql.9.0.0.nupkg.sha512",
+    "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\questpdf\\2026.2.1\\questpdf.2026.2.1.nupkg.sha512",
     "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\system.codedom\\6.0.0\\system.codedom.6.0.0.nupkg.sha512",
     "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\system.collections.immutable\\7.0.0\\system.collections.immutable.7.0.0.nupkg.sha512",
     "C:\\Users\\ADMIN_SISTEMAS\\.nuget\\packages\\system.composition\\7.0.0\\system.composition.7.0.0.nupkg.sha512",

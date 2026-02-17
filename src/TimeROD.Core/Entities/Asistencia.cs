@@ -57,6 +57,16 @@ public class Asistencia : BaseEntity
     /// </summary>
     public int? MinutosRetraso { get; set; }
 
+    /// <summary>
+    /// Indica si salió antes de su hora
+    /// </summary>
+    public bool SalidaAnticipada { get; set; } = false;
+
+    /// <summary>
+    /// Minutos que salió antes
+    /// </summary>
+    public int? MinutosAnticipados { get; set; }
+
     // Navegación
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public Empleado? Empleado { get; set; }

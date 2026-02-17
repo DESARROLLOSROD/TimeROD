@@ -13,7 +13,9 @@ export interface AsistenciaDto {
     tipo: string; // 'Normal', 'Retardo', 'Falta', etc.
     observaciones?: string;
     llegadaTardia: boolean;
-    minutosRetraso?: number;
+    minutosRetraso: number | null;
+    salidaAnticipada: boolean;
+    minutosAnticipados: number | null;
     horasTrabajadas?: number;
 }
 
@@ -34,9 +36,13 @@ export interface RegistroSalidaDto {
 }
 
 export interface UpdateAsistenciaDto {
-    fecha: string;
-    horaEntrada: string;
+    horaEntrada?: string;
     horaSalida?: string;
     tipo: string;
-    observaciones?: string;
+    notas?: string;
+    aprobado: boolean;
+    llegadaTardia: boolean;
+    minutosRetraso?: number;
+    salidaAnticipada: boolean;
+    minutosAnticipados?: number;
 }

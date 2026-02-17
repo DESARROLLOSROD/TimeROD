@@ -123,6 +123,7 @@ builder.Services.AddScoped<TimeROD.Core.Interfaces.IAreaService, TimeROD.Infrast
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IEmpleadoService, TimeROD.Infrastructure.Services.EmpleadoService>();
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IAsistenciaService, TimeROD.Infrastructure.Services.AsistenciaService>();
 builder.Services.AddScoped<TimeROD.Core.Interfaces.IHorarioService, TimeROD.Infrastructure.Services.HorarioService>();
+builder.Services.AddScoped<TimeROD.Core.Interfaces.IReportExportService, TimeROD.Infrastructure.Services.ReportExportService>();
 builder.Services.AddControllers();
 //builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();

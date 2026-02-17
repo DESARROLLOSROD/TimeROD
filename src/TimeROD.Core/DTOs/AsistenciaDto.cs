@@ -21,4 +21,6 @@ public class AsistenciaDto
     public decimal? HorasTrabajadas { get; set; }
     public bool LlegadaTardia { get; set; }
     public int? MinutosRetraso { get; set; }
+    public bool SalidaAnticipada { get; set; }
+    public int? MinutosAnticipados { get; set; }
 }

@@ -211,6 +211,60 @@ public class AsistenciaService : IAsistenciaService
 
         // Registrar hora de salida
         asistencia.HoraSalida = DateTime.UtcNow;
+        
+        // Lógica de Salida Anticipada
+        bool salidaAnticipada = false;
+        int minutosAnticipados = 0;
+
+        var empleado = asistencia.Empleado;
+        if (empleado != null)
+        {
+             // Cargar Horario si no está cargado (aunque en el query inicial incluimos Area y Empresa, 
+             // necesitamos asegurar que Horario de Empleado y Horario de Area estén disponibles)
+             // El query inicial en RegistrarSalidaAsync carga Empleado->Area y Empleado->Empresa
+             // Pero NO carga Empleado->Horario ni Area->Horario. Vamos a cargarlos.
+             await _context.Entry(empleado).Reference(e => e.Horario).LoadAsync();
+             if (empleado.Area != null)
+             {
+                 await _context.Entry(empleado.Area).Reference(a => a.Horario).LoadAsync();
+             }
+
+             var horario = empleado.Horario ?? empleado.Area?.Horario;
+
+             if (horario != null && horario.Activo)
+             {
+                TimeZoneInfo mxTimeZone;
+                try 
+                {
+                    mxTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
+                }
+                catch
+                {
+                     mxTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Mexico_City");
+                }
+
+                var horaSalidaLocal = TimeZoneInfo.ConvertTimeFromUtc(asistencia.HoraSalida.Value, mxTimeZone);
+                var fechaLocal = horaSalidaLocal.Date;
+                
+                // Construir la fecha/hora esperada de salida en tiempo local
+                var salidaEsperadaLocal = fechaLocal.Add(horario.HoraSalida);
+                
+                // Si sale antes de la hora (considerando tolerancia si quisieramos, 
+                // pero generalmente salida anticipada es estricta o con poca tolerancia. 
+                // Usaremos 0 tolerancia o la misma del horario si aplica, pero la tolerancia del horario suele ser para entrada.)
+                // Asumamos 0 tolerancia para salida anticipada por ahora.
+                
+                if (horaSalidaLocal < salidaEsperadaLocal)
+                {
+                    salidaAnticipada = true;
+                    minutosAnticipados = (int)(salidaEsperadaLocal - horaSalidaLocal).TotalMinutes;
+                }
+             }
+        }
+
+        asistencia.SalidaAnticipada = salidaAnticipada;
+        asistencia.MinutosAnticipados = minutosAnticipados;
+
         asistencia.Notas = string.IsNullOrEmpty(dto.Notas)
             ? asistencia.Notas
             : (string.IsNullOrEmpty(asistencia.Notas) ? dto.Notas : $"{asistencia.Notas} | {dto.Notas}");
@@ -240,6 +294,8 @@ public class AsistenciaService : IAsistenciaService
         asistencia.Aprobado = dto.Aprobado;
         asistencia.LlegadaTardia = dto.LlegadaTardia;
         asistencia.MinutosRetraso = dto.MinutosRetraso;
+        asistencia.SalidaAnticipada = dto.SalidaAnticipada;
+        asistencia.MinutosAnticipados = dto.MinutosAnticipados;
 
         // Recalcular horas trabajadas si hay entrada y salida
         if (asistencia.HoraEntrada.HasValue && asistencia.HoraSalida.HasValue)
@@ -323,7 +379,9 @@ public class AsistenciaService : IAsistenciaService
             Aprobado = a.Aprobado,
             HorasTrabajadas = a.HorasTrabajadas,
             LlegadaTardia = a.LlegadaTardia,
-            MinutosRetraso = a.MinutosRetraso
+            MinutosRetraso = a.MinutosRetraso,
+            SalidaAnticipada = a.SalidaAnticipada,
+            MinutosAnticipados = a.MinutosAnticipados
         };
     }
 }

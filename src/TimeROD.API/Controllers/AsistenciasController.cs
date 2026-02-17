@@ -11,11 +11,13 @@ namespace TimeROD.API.Controllers;
 public class AsistenciasController : ControllerBase
 {
     private readonly IAsistenciaService _asistenciaService;
+    private readonly IReportExportService _reportExportService;
     private readonly ILogger<AsistenciasController> _logger;
 
-    public AsistenciasController(IAsistenciaService asistenciaService, ILogger<AsistenciasController> logger)
+    public AsistenciasController(IAsistenciaService asistenciaService, IReportExportService reportExportService, ILogger<AsistenciasController> logger)
     {
         _asistenciaService = asistenciaService;
+        _reportExportService = reportExportService;
         _logger = logger;
     }
 
@@ -191,6 +193,46 @@ public class AsistenciasController : ControllerBase
         {
             _logger.LogError(ex, "Error al eliminar asistencia {AsistenciaId}", id);
             return StatusCode(500, new { error = "Error al eliminar asistencia", detalle = ex.Message });
+        }
+    }
+
+    [HttpGet("reporte/excel")]
+    public async Task<IActionResult> GetReporteExcel(
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null,
+        [FromQuery] int? empresaId = null)
+    {
+        try
+        {
+            var reporte = await _asistenciaService.GetReporteAsync(fechaInicio, fechaFin, empresaId);
+            var fileContent = _reportExportService.GenerateExcel(reporte);
+            
+            return File(fileContent, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"ReporteAsistencias_{DateTime.Now:yyyyMMdd}.xlsx");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al exportar reporte Excel");
+            return StatusCode(500, new { error = "Error al exportar reporte", detalle = ex.Message });
+        }
+    }
+
+    [HttpGet("reporte/pdf")]
+    public async Task<IActionResult> GetReportePdf(
+        [FromQuery] DateTime? fechaInicio = null,
+        [FromQuery] DateTime? fechaFin = null,
+        [FromQuery] int? empresaId = null)
+    {
+        try
+        {
+            var reporte = await _asistenciaService.GetReporteAsync(fechaInicio, fechaFin, empresaId);
+            var fileContent = _reportExportService.GeneratePdf(reporte);
+            
+            return File(fileContent, "application/pdf", $"ReporteAsistencias_{DateTime.Now:yyyyMMdd}.pdf");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al exportar reporte PDF");
+            return StatusCode(500, new { error = "Error al exportar reporte", detalle = ex.Message });
         }
     }
 }

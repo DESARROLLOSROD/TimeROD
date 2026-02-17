@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Search, Calendar, User, Clock } from 'lucide-react';
+import { Search, Calendar, User, Clock, TrendingUp, AlertCircle, CheckCircle, Download, Edit2 } from 'lucide-react';
 import asistenciaService from '../../services/asistenciaService';
 import empleadoService from '../../services/empleadoService';
-import type { AsistenciaDto } from '../../types/asistencia';
+import AsistenciaEditModal from '../../components/asistencias/AsistenciaEditModal';
+import type { AsistenciaDto, UpdateAsistenciaDto } from '../../types/asistencia';
 import type { EmpleadoDto } from '../../types/empleado';
+import type { AsistenciaReporte } from '../../types/reporte';
 
 export default function AsistenciasPage() {
     const [asistencias, setAsistencias] = useState<AsistenciaDto[]>([]);
+    const [reporte, setReporte] = useState<AsistenciaReporte | null>(null);
     const [empleados, setEmpleados] = useState<EmpleadoDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    // Edit Modal State
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingAsistencia, setEditingAsistencia] = useState<AsistenciaDto | null>(null);
 
     // Filters
     const [fechaInicio, setFechaInicio] = useState('');
@@ -48,14 +55,60 @@ export default function AsistenciasPage() {
     const loadAsistencias = async (start?: string, end?: string, empId?: string) => {
         setLoading(true);
         try {
-            const data = await asistenciaService.getAll(
+            const reportData = await asistenciaService.getReporte(
                 start || fechaInicio,
                 end || fechaFin,
-                empId ? Number(empId) : (empleadoId ? Number(empleadoId) : undefined)
+                undefined // EmpresaId not used yet in this context
             );
-            setAsistencias(data);
+
+            // Filter by employee locally if needed, or pass to service if the endpoint supported it (it does supports filters but getReporte might look different)
+            // The endpoint getReporte returns all assistances in the date range.
+            // If we want to filter by employee, we should do it in the service call or filter the result.
+            // The service definition for getReporte we added: (fechaInicio, fechaFin, empresaId).
+            // It seems the backend getReporte doesn't support employeeId filter directly in the controller?
+            // Let's check Controller: GetReporteAsync(DateTime? fechaInicio, DateTime? fechaFin, int? empresaId)
+            // Correct, it does NOT support employeeId. So we must filter locally or use the other endpoint for the list.
+
+            // However, to get the metrics right for a specific employee, we should probably add employeeId to the backend functionality eventually.
+            // For now, let's use the report endpoint for the metrics of ALL (or filtered by date), 
+            // BUT if an employee is selected, we might want to fallback to the old method OR filter the report result.
+
+            // Let's stick to the plan: Use Report Endpoint. 
+            // If employee is selected, we filter the `asistencias` array from the report?
+            // That would make the "Total metrics" incorrect for the specific employee view.
+
+            // PROPOSAL: Use getReporte for the top cards (Global/Company view context) 
+            // AND use GetAll/GetByEmpleado for the list if specific interactions are needed?
+            // OR just display what the report returns.
+
+            // Let's perform client-side filtering on the report data if an employee is selected, 
+            // so the metrics update dynamically!
+
+            let filteredAsistencias = reportData.asistencias;
+            const selectedEmpId = empId ? Number(empId) : (empleadoId ? Number(empleadoId) : undefined);
+
+            if (selectedEmpId) {
+                filteredAsistencias = filteredAsistencias.filter(a => a.empleadoId === selectedEmpId);
+                // Re-calculate metrics for client-side display
+                const totalHoras = filteredAsistencias.reduce((sum, a) => sum + (a.horasTrabajadas || 0), 0);
+                const llegadasTardias = filteredAsistencias.filter(a => a.llegadaTardia).length;
+
+                setReporte({
+                    ...reportData,
+                    totalRegistros: filteredAsistencias.length,
+                    totalHorasTrabajadas: totalHoras,
+                    llegadasTardias: llegadasTardias,
+                    asistencias: filteredAsistencias
+                });
+                setAsistencias(filteredAsistencias);
+            } else {
+                setReporte(reportData);
+                setAsistencias(reportData.asistencias);
+            }
+
         } catch (err) {
-            setError('Error al cargar historial de asistencias.');
+            setError('Error al cargar reporte y asistencias.');
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -66,12 +119,132 @@ export default function AsistenciasPage() {
         loadAsistencias();
     };
 
+    const handleEdit = (asistencia: AsistenciaDto) => {
+        setEditingAsistencia(asistencia);
+        setIsEditModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsEditModalOpen(false);
+        setEditingAsistencia(null);
+    };
+
+    const handleSaveEdit = async (id: number, data: UpdateAsistenciaDto) => {
+        try {
+            await asistenciaService.update(id, data);
+            handleCloseModal();
+            loadAsistencias(); // Refresh list
+        } catch (err) {
+            console.error('Error updating asistencia:', err);
+            setError('Error al actualizar la asistencia.');
+            setTimeout(() => setError(''), 3000);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Historial de Asistencias</h1>
                     <p className="mt-1 text-sm text-gray-500">Consulta de entradas y salidas del personal.</p>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => asistenciaService.downloadReporteExcel(fechaInicio, fechaFin, undefined)}
+                        className="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                        <Download className="-ml-1 mr-2 h-5 w-5 text-green-600" />
+                        Excel
+                    </button>
+                    <button
+                        onClick={() => asistenciaService.downloadReportePdf(fechaInicio, fechaFin, undefined)}
+                        className="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                        <Download className="-ml-1 mr-2 h-5 w-5 text-red-600" />
+                        PDF
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <Clock className="h-6 w-6 text-gray-400" aria-hidden="true" />
+                            </div>
+                            <div className="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Total Horas</dt>
+                                    <dd>
+                                        <div className="text-lg font-medium text-gray-900">
+                                            {reporte?.totalHorasTrabajadas.toFixed(1) || '0.0'}
+                                        </div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <AlertCircle className="h-6 w-6 text-red-400" aria-hidden="true" />
+                            </div>
+                            <div className="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Llegadas Tardías</dt>
+                                    <dd>
+                                        <div className="text-lg font-medium text-gray-900">
+                                            {reporte?.llegadasTardias || 0}
+                                        </div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <CheckCircle className="h-6 w-6 text-green-400" aria-hidden="true" />
+                            </div>
+                            <div className="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Asistencias</dt>
+                                    <dd>
+                                        <div className="text-lg font-medium text-gray-900">
+                                            {reporte?.totalRegistros || 0}
+                                        </div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <TrendingUp className="h-6 w-6 text-blue-400" aria-hidden="true" />
+                            </div>
+                            <div className="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Promedio Horas/Día</dt>
+                                    <dd>
+                                        <div className="text-lg font-medium text-gray-900">
+                                            {reporte?.promedioHorasPorDia?.toFixed(1) || '0.0'}
+                                        </div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -161,6 +334,11 @@ export default function AsistenciasPage() {
                                                 Tarde ({asistencia.minutosRetraso} min)
                                             </span>
                                         )}
+                                        {asistencia.salidaAnticipada && (
+                                            <span className="mb-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                                                Salida Anticipada ({asistencia.minutosAnticipados} min)
+                                            </span>
+                                        )}
                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${asistencia.tipo === 'Normal' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                                             }`}>
                                             {asistencia.tipo}
@@ -170,6 +348,13 @@ export default function AsistenciasPage() {
                                                 {asistencia.observaciones}
                                             </span>
                                         )}
+                                        <button
+                                            onClick={() => handleEdit(asistencia)}
+                                            className="mt-2 inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                            title="Editar Asistencia"
+                                        >
+                                            <Edit2 className="h-4 w-4" />
+                                        </button>
                                     </div>
                                 </div>
                             </li>
@@ -182,6 +367,17 @@ export default function AsistenciasPage() {
                     </ul>
                 )}
             </div>
-        </div>
+
+            {
+                editingAsistencia && (
+                    <AsistenciaEditModal
+                        asistencia={editingAsistencia}
+                        isOpen={isEditModalOpen}
+                        onClose={handleCloseModal}
+                        onSave={handleSaveEdit}
+                    />
+                )
+            }
+        </div >
     );
 }
